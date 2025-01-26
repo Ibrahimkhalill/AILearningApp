@@ -31,7 +31,7 @@ const ResetPassword = ({ navigation }) => {
       <View style={styles.container}>
         <View style={styles.backButton}>
           {/* Add back button logic */}
-          <CircularButton />
+          <CircularButton navigation={navigation} />
         </View>
 
         {/* Replace with the globe image from your assets */}
@@ -50,12 +50,7 @@ const ResetPassword = ({ navigation }) => {
         <View>
           <Text className="text-[#A4A4A4] mb-2">Password</Text>
           <View style={styles.inputWrapper}>
-            <Ionicons
-              name="lock-closed-outline"
-              size={20}
-              color="#888"
-              style={styles.icon}
-            />
+            <Ionicons name="lock-closed-outline" size={20} color="#888" />
             <TextInput
               style={styles.input}
               placeholder="*************"
@@ -63,14 +58,9 @@ const ResetPassword = ({ navigation }) => {
               placeholderTextColor="#888"
             />
           </View>
-          <Text className="text-[#A4A4A4] mb-2">Password</Text>
+          <Text className="text-[#A4A4A4] mb-2">Confirm Password</Text>
           <View style={styles.inputWrapper}>
-            <Ionicons
-              name="lock-closed-outline"
-              size={20}
-              color="#888"
-              style={styles.icon}
-            />
+            <Ionicons name="lock-closed-outline" size={20} color="#888" />
             <TextInput
               style={styles.input}
               placeholder="*************"

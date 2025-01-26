@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "aileariningapp",
-    "slug": "aileariningapp",
-    "scheme": "aileariningapp",
+    "name": "ailearningapp",
+    "slug": "ailearningapp",
+    "scheme": "ailearningapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/main_logo.png",
+    "icon": "./app/assets/icon.png",
     "newArchEnabled": true,
     "splash": {
       "image": "./app/assets/splash.png",
@@ -30,7 +30,8 @@
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
         "com.google.android.c2dm.permission.RECEIVE"
-      ]
+      ],
+      "package": "com.aininja.ailearningapp"
     },
     "web": {
       "favicon": "./app/assets/favicon.png"
@@ -46,7 +47,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "0e55761c-c8d8-40ac-b83c-0cb4e11caa0a"
+        "projectId": "ecb9dfea-122a-4b55-adba-45f34d59891e"
       }
     },
     "owner": "aininja"

@@ -31,7 +31,7 @@ const ForgotPassword = ({ navigation }) => {
       <View style={styles.container}>
         <View style={styles.backButton}>
           {/* Add back button logic */}
-          <CircularButton />
+          <CircularButton navigation={navigation} />
         </View>
 
         {/* Replace with the globe image from your assets */}
