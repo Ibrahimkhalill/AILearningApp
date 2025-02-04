@@ -7,6 +7,9 @@ import {
   StyleSheet,
   Image,
   SafeAreaView,
+  ActivityIndicator,
+  ToastAndroid,
+  Platform,
 } from "react-native";
 import CircularButton from "../component/BackButton";
 import {
@@ -15,11 +18,72 @@ import {
   FontAwesome,
 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import axiosInstance from "../component/axiosInstance";
 const ForgotPassword = ({ navigation }) => {
   const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSend = () => {
-    navigation.navigate("OTPVerificationScreen");
+  function notifyMessage(msg) {
+    if (Platform.OS === "android") {
+      ToastAndroid.showWithGravityAndOffset(
+        msg,
+        ToastAndroid.SHORT,
+        ToastAndroid.TOP,
+        25,
+        160
+      );
+    } else {
+      Alert.alert("Warning!", msg);
+    }
+  }
+
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email format validation
+    return regex.test(email);
+  };
+
+  const handleForgotPassword = async () => {
+    if (email.trim() === "") {
+      setError("Email field cannot be empty");
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    setError(""); // Clear any previous errors
+    setIsLoading(true);
+
+    try {
+      const response = await axiosInstance.post(`/auth/password/reset`, {
+        email,
+      });
+
+      if (response.status === 200) {
+        notifyMessage("OTP sent successfully. Please check your email.");
+        navigation.navigate("OTPVerificationScreen", {
+          email: email,
+
+          // Add other data you want to send
+        }); // Navigate to the OTP verification screen
+      } else {
+        notifyMessage(response.data.message || "Failed to send OTP.");
+      }
+    } catch (error) {
+      console.log("response", error);
+      notifyMessage(
+        "Error: " + (error.response?.data?.message || error.message)
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleOnchange = (onText) => {
+    setEmail(onText);
+    setError("");
   };
 
   const handleLogin = () => {
@@ -60,16 +124,26 @@ const ForgotPassword = ({ navigation }) => {
               style={styles.input}
               placeholder="Email Address"
               placeholderTextColor="#888"
+              onChangeText={handleOnchange}
+              value={email}
             />
           </View>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
         </View>
 
-        <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+        <TouchableOpacity
+          style={styles.sendButton}
+          onPress={handleForgotPassword}
+        >
           <LinearGradient
             colors={["#8E44AD", "#8E44AD"]}
             style={styles.gradientButton}
           >
-            <Text style={styles.sendButtonText}>SEND</Text>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.sendButtonText}>SEND</Text>
+            )}
           </LinearGradient>
         </TouchableOpacity>
 
@@ -90,6 +164,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 50,
+  },
+  errorText: {
+    color: "#E91111",
+    fontSize: 12,
+    marginTop: -5,
+    left: 0,
+    marginBottom: 10,
   },
   backButton: {
     width: "100%",

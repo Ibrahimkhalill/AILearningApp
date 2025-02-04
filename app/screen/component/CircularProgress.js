@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Svg, { Circle, G, Text as SvgText } from "react-native-svg";
 
 const CircularProgress = ({ percentage }) => {
-  const size = 25; // Size of the SVG container
+  const size = 30; // Size of the SVG container
   const strokeWidth = 2; // Width of the progress bar
   const radius = (size - strokeWidth) / 2; // Radius of the circle
   const circumference = 2 * Math.PI * radius; // Circumference of the circle
@@ -37,11 +37,11 @@ const CircularProgress = ({ percentage }) => {
         </G>
         {/* Text in the Center */}
         <SvgText
-          x={size / 2}
+          x={size / 2.3}
           y={size / 2}
           textAnchor="middle"
           dy=".3em"
-          fontSize="5"
+          fontSize="8"
           fill="#FFFFFF"
           fontWeight="bold"
         >

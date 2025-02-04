@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import React, { useEffect } from "react";
+import React from "react";
 import { StyleSheet, Platform } from "react-native";
 
 import { AuthProvider, useAuth } from "./app/screen/component/Auth";
@@ -33,22 +33,44 @@ import Shooping from "./app/screen/Shopping";
 import ForgotPassword from "./app/screen/authentication/ForgotPassword";
 import OTPVerificationScreen from "./app/screen/authentication/OTPVerificationScreen";
 import ResetPassword from "./app/screen/authentication/ResetPassword";
+import SignupOtpVerification from "./app/screen/authentication/SignupOtpVerification";
+import PasswordChanged from "./app/screen/authentication/PasswordChanged";
+import { LearningTimeProvider } from "./app/screen/component/LearningTimeContext";
+import firebase from "firebase/app";
+import "firebase/auth";
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
+// ✅ Authentication Stack
 function AuthStack() {
   return (
     <Stack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName="home"
+      initialRouteName="Login"
     >
       <Stack.Screen name="home" component={Home} />
       <Stack.Screen name="signup" component={Signup} />
       <Stack.Screen name="login" component={Login} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+      <Stack.Screen name="ResetPassword" component={ResetPassword} />
+      <Stack.Screen name="OTP" component={SignupOtpVerification} />
+      <Stack.Screen name="PasswordChanged" component={PasswordChanged} />
+      <Stack.Screen
+        name="OTPVerificationScreen"
+        component={OTPVerificationScreen}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// ✅ App Stack After Login (Fix: Added `return`)
+function AfterLogin() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="dashborad" component={Dashboard} />
       <Stack.Screen name="language" component={LanguageSelection} />
       <Stack.Screen name="expertiselevel" component={ExpertiseLevel} />
       <Stack.Screen name="DailyGoalScreen" component={DailyGoalScreen} />
-      <Stack.Screen name="dashborad" component={Dashboard} />
       <Stack.Screen name="asking" component={Asking} />
       <Stack.Screen name="OrderingCofee" component={OrderingCofee} />
       <Stack.Screen name="Shooping" component={Shooping} />
@@ -63,29 +85,30 @@ function AuthStack() {
       <Stack.Screen name="FAQPage" component={FAQPage} />
       <Stack.Screen name="helpsupport" component={HelpSupport} />
       <Stack.Screen name="TermsConditions" component={TermsConditions} />
-      <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-      <Stack.Screen name="ResetPassword" component={ResetPassword} />
-      <Stack.Screen
-        name="OTPVerificationScreen"
-        component={OTPVerificationScreen}
-      />
     </Stack.Navigator>
   );
 }
 
+// ✅ Select Stack Based on Authentication (Fix: Removed `return;`)
 function AppContent() {
-  return <AuthStack />;
+  const { isLoggedIn } = useAuth();
+  return isLoggedIn ? <AfterLogin /> : <AuthStack />;
 }
 
+// ✅ App Entry Point
 export default function App() {
+  // Firebase configuration object
+
   return (
     <AuthProvider>
-      <SafeAreaProvider>
-        <NavigationContainer>
-          <AppContent />
-        </NavigationContainer>
-        <StatusBar style="light" backgroundColor="#121212" />
-      </SafeAreaProvider>
+      <LearningTimeProvider>
+        <SafeAreaProvider>
+          <NavigationContainer>
+            <AppContent />
+          </NavigationContainer>
+          <StatusBar style="light" backgroundColor="#121212" />
+        </SafeAreaProvider>
+      </LearningTimeProvider>
     </AuthProvider>
   );
 }

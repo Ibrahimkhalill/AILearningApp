@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react"; // ✅ Fixed import
 import {
   View,
   Text,
@@ -8,94 +8,86 @@ import {
   StyleSheet,
   Image,
 } from "react-native";
-import { Ionicons, SimpleLineIcons } from "@expo/vector-icons";
+import { Ionicons, SimpleLineIcons, FontAwesome } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CircularButton from "../component/BackButton";
 import Setting from "../component/Setting";
-
-// Grammar correction function
-const correctGrammar = (text) => {
-  const corrections = [
-    { incorrect: "i", correct: "I" },
-    { incorrect: "is", correct: "am" },
-    { incorrect: "lerning", correct: "learning" },
-  ];
-
-  let correctedText = text;
-  corrections.forEach((correction) => {
-    correctedText = correctedText.replace(
-      new RegExp(`\\b${correction.incorrect}\\b`, "gi"),
-      correction.correct
-    );
-  });
-
-  return { correctedText, corrections };
-};
+import * as Speech from "expo-speech";
+import axios from "axios";
+import RenderHtml from "react-native-render-html";
+import LanguageDropdown from "../component/LanguageDropdown";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LanguageChat = ({ navigation }) => {
-  const [messages, setMessages] = useState([
-    {
-      id: "1",
-      text: "i is shuvo",
-      sender: "user",
-      corrections: [
-        { incorrect: "i", correct: "I" },
-        { incorrect: "is", correct: "am" },
-      ],
-    },
-    {
-      id: "2",
-      text: "I am Shuvo",
-      sender: "bot",
-      corrections: [],
-    },
-    {
-      id: "3",
-      text: "The language lerning app is designed",
-      sender: "user",
-      corrections: [{ incorrect: "lerning", correct: "learning" }],
-    },
-    {
-      id: "4",
-      text: "The language learning app is designed",
-      sender: "bot",
-      corrections: [],
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
+  const [lang, setLang] = useState("en");
+  const [loading, setLoading] = useState(false);
 
-  const highlightCorrections = (text, corrections, isUser) => {
-    const words = text.split(" ");
-    return words.map((word, index) => {
-      const correction = corrections.find(
-        (c) => c.incorrect.toLowerCase() === word.toLowerCase()
-      );
-      if (isUser && correction) {
-        // Highlight user's incorrect words in red
-        return (
-          <Text key={index} style={styles.userIncorrect}>
-            {word}{" "}
-          </Text>
-        );
-      } else if (!isUser && correction) {
-        // Highlight bot's corrected words in green
-        return (
-          <Text key={index} style={styles.botCorrect}>
-            {correction.correct}
-          </Text>
-        );
-      } else {
-        // Default styles for other words
-        return (
-          <Text
-            key={index}
-            style={isUser ? styles.userDefaultText : styles.botDefaultText}
-          >
-            {word}{" "}
-          </Text>
-        );
-      }
+  const htmlToPlainText = (html) => {
+    return html.replace(/<\/?[^>]+(>|$)/g, "");
+  };
+
+  const handleSpeech = (text) => {
+    console.log("text", text);
+
+    if (!text) return;
+    const plainText = htmlToPlainText(text);
+    console.log("plainText", plainText);
+
+    Speech.speak(plainText, {
+      language: lang,
+      pitch: 1.1,
+      rate: 1.0,
     });
   };
+
+  const fetchData = async () => {
+    let userId = await AsyncStorage.getItem("userId");
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        `https://advanced-oarfish-slightly.ngrok-free.app/get_messages_audio/?user_id=${userId}`
+      );
+      setMessages(response.data);
+      console.log("response.data", response.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangeLanguage = async (lang) => {
+    try {
+      let userId = await AsyncStorage.getItem("userId");
+      const formData = new FormData();
+      formData.append("lang", lang);
+      formData.append("user_id", userId);
+
+      const response = await axios.post(
+        "https://advanced-oarfish-slightly.ngrok-free.app/translate",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      setLang(lang);
+      setMessages(response.data);
+      console.log("Translated response:", response.data);
+    } catch (error) {
+      console.error("Error fetching translation:", error);
+    }
+  };
+
+  useEffect(() => {
+    try {
+      fetchData();
+    } catch (error) {
+      console.error("useEffect Error:", error);
+    }
+  }, []);
 
   const renderMessage = ({ item }) => (
     <View
@@ -118,12 +110,16 @@ const LanguageChat = ({ navigation }) => {
             : styles.botMessageText
         }
       >
-        {highlightCorrections(
-          item.text,
-          item.corrections,
-          item.sender === "user"
-        )}
+        <RenderHtml contentWidth={300} source={{ html: item.text }} />
       </Text>
+      {item.sender === "bot" && (
+        <FontAwesome
+          name="file-audio-o"
+          size={18}
+          color={"#0C41FE"}
+          onPress={() => handleSpeech(item.text)}
+        />
+      )}
       {item.sender === "user" && (
         <Image
           source={{
@@ -142,15 +138,7 @@ const LanguageChat = ({ navigation }) => {
           <TouchableOpacity>
             <CircularButton navigation={navigation} />
           </TouchableOpacity>
-          <View style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
-            <TouchableOpacity className="bg-[#8E44AD] px-4 py-1 rounded-sm">
-              <Text style={styles.headerTitle1}>English</Text>
-            </TouchableOpacity>
-            <SimpleLineIcons name="refresh" size={20} color={"white"} />
-            <TouchableOpacity className="bg-[#8E44AD] px-4 py-1 rounded-sm">
-              <Text style={styles.headerTitle1}>Spanish</Text>
-            </TouchableOpacity>
-          </View>
+          <LanguageDropdown handleChangeLanguage={handleChangeLanguage} />
           <TouchableOpacity>
             <Setting navigation={navigation} />
           </TouchableOpacity>
@@ -172,14 +160,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#121212",
-    paddingLeft: 10,
-    paddingRight: 10,
+    paddingLeft: 5,
+    paddingRight: 5,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
+    padding: 10,
   },
   headerTitle1: {
     color: "#fff",
@@ -205,18 +193,23 @@ const styles = StyleSheet.create({
   botMessageContainer: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    alignItems: "center",
+    alignItems: "flex-end",
+    gap: 5,
     marginBottom: 16,
   },
   userMessageText: {
+    color: "#8E44AD",
     padding: 10,
     borderRadius: 8,
     maxWidth: "70%",
+    backgroundColor: "#333",
   },
   botMessageText: {
+    color: "#4B98E5",
     padding: 10,
     borderRadius: 8,
     maxWidth: "70%",
+    backgroundColor: "#222",
   },
   userImage: {
     width: 30,
@@ -246,20 +239,6 @@ const styles = StyleSheet.create({
   },
   sendIcon: {
     marginLeft: 12,
-  },
-  userIncorrect: {
-    color: "#B30000",
-    textDecorationLine: "underline",
-  },
-  botCorrect: {
-    color: "#",
-    fontWeight: "bold",
-  },
-  userDefaultText: {
-    color: "#8E44AD", // Default user message color
-  },
-  botDefaultText: {
-    color: "#4B98E5", // Default bot message color
   },
 });
 

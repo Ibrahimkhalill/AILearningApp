@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,41 +8,48 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import axiosInstance from "./component/axiosInstance";
 
 const languages = [
   {
     id: "1",
     name: "English",
+    value: "en",
     localName: "(English)",
-    flag: "https://banner2.cleanpng.com/20180510/pee/kisspng-flag-of-australia-map-national-flag-5af41ff07a9c63.3919361315259484005022.jpg",
+    flag: "https://flagcdn.com/w40/gb.png",
   },
   {
     id: "2",
     name: "Spanish",
+    value: "es",
     localName: "(Español)",
-    flag: "https://banner2.cleanpng.com/20180506/ruq/avdy85p1c.webp",
+    flag: "https://flagcdn.com/w40/es.png",
   },
   {
     id: "3",
-    name: "German",
+    name: "Chinese Mandarin",
+    value: "cn",
     localName: "(中文)",
     flag: "https://static.vecteezy.com/system/resources/thumbnails/051/966/111/small/china-country-round-flag-free-png.png",
   },
   {
     id: "4",
     name: "French",
+    value: "fr",
     localName: "(Français)",
-    flag: "https://www.clipartmax.com/png/middle/153-1537984_france-flag-france-flag-circle.png",
+    flag: "https://flagcdn.com/w40/fr.png",
   },
   {
     id: "5",
-    name: "Italian",
+    name: "Arabic",
+    value: "ar",
     localName: "(العربية)",
     flag: "https://png.pngtree.com/png-vector/20220511/ourmid/pngtree-round-country-flag-saudi-arabia-png-image_4570913.png",
   },
   {
     id: "6",
-    name: "portugeze",
+    name: "Egypt",
+    value: "ar-eg",
     localName: "(Syria)",
     flag: "https://e7.pngegg.com/pngimages/402/257/png-clipart-flag-of-egypt-national-flag-egypt-flag-egypt.png",
   },
@@ -50,6 +57,18 @@ const languages = [
 
 export default function LanguageSelection({ navigation }) {
   const [selectedLanguage, setSelectedLanguage] = useState(null);
+  const updateProfile = async (language) => {
+    try {
+      const response = await axiosInstance.put("/user/profile", {
+        language,
+      });
+      if (response.status === 200) {
+        navigation.navigate("expertiselevel");
+      }
+    } catch (error) {
+      console.log("Error updating profile:", error);
+    }
+  };
 
   const renderItem = ({ item }) => {
     const isSelected = selectedLanguage === item.id;
@@ -58,7 +77,7 @@ export default function LanguageSelection({ navigation }) {
         style={[styles.languageItem, isSelected && styles.selectedItem]}
         onPress={() => {
           setSelectedLanguage(item.id);
-          navigation.navigate("expertiselevel");
+          updateProfile(item.value);
         }}
       >
         <Image source={{ uri: item.flag }} style={styles.flag} />
@@ -123,9 +142,9 @@ const styles = StyleSheet.create({
     borderColor: "#7F00FF",
   },
   flag: {
-    width: 40,
+    width: 30,
     height: 30,
-    borderRadius: 5,
+    borderRadius: 15,
     marginRight: 15,
   },
   languageTextContainer: {

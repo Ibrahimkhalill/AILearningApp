@@ -7,25 +7,42 @@ import {
   StyleSheet,
   Image,
   Dimensions,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CircularButton from "../component/BackButton";
 import Setting from "../component/Setting";
+import axiosInstance from "../component/axiosInstance";
+import { ScrollView } from "react-native";
 
 const HelpSupport = ({ navigation }) => {
-  const [email, setEmail] = useState("Pappyroy6393@gmail.com");
+  const [email, setEmail] = useState("");
   const [problem, setProblem] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    // Handle the form submission here
-    console.log("Email:", email);
-    console.log("Problem:", problem);
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.post("/problem/report", {
+        email: email,
+        description: problem,
+      });
+
+      if (response.status === 200) {
+        setEmail("");
+        setProblem("");
+        Alert.alert("Success", "Messges send successfully!");
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
   };
-
   return (
     <SafeAreaView style={{ flexGrow: 1 }}>
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <CircularButton navigation={navigation} />
@@ -83,7 +100,7 @@ const HelpSupport = ({ navigation }) => {
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <Text style={styles.submitButtonText}>Submit</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -166,10 +183,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
-    position: "absolute",
-    bottom: 10,
-    width: "100%",
-    left: "5%",
   },
   submitButtonText: {
     color: "#fff",

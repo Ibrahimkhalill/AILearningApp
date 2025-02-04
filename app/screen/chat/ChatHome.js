@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,29 +7,254 @@ import {
   FlatList,
   StyleSheet,
   Image,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CircularButton from "../component/BackButton";
 import Setting from "../component/Setting";
+import axios from "axios";
+import RenderHtml from "react-native-render-html"; // ✅ Import HTML Renderer
+import * as Speech from "expo-speech";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axiosInstance from "../component/axiosInstance";
+import CustomAlert from "../component/CustomAlert";
+import { useLearningTime } from "../component/LearningTimeContext";
 
 const ChatHome = ({ navigation }) => {
-  const [messages, setMessages] = useState([
-    { id: "1", text: "Hi, how are you doing today", sender: "user" },
-    { id: "2", text: "I'm Great! You?", sender: "bot" },
-    { id: "3", text: "Hi, how are you doing today", sender: "user" },
-    { id: "4", text: "I'm Great! You?", sender: "bot" },
-  ]);
-
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [typing, setTyping] = useState(false); // New state for typing animation
+  const [lang, setLang] = useState("en");
+  const [plan, setPlan] = useState("");
+  const [level, setLevel] = useState("");
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const { updateLearningTime } = useLearningTime();
+  const handleSend = async () => {
+    if (!inputText.trim() || loading) return;
+    const userId = await AsyncStorage.getItem("userId");
+    // Add user message to state
+    const newMessage = {
+      id: Date.now().toString(),
+      original_text: inputText,
+      sender: "user",
+    };
+    setInputText(""); // Clear input only after response
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
 
-  const handleSend = () => {
-    if (inputText.trim()) {
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { id: Date.now().toString(), text: inputText, sender: "user" },
-      ]);
-      setInputText("");
+    setLoading(true); // Start loading
+    setTyping(true); // Start typing animation
+    console.log(newMessage.original_text, lang, userId, plan, level);
+
+    try {
+      const response = await axios.post(
+        "https://advanced-oarfish-slightly.ngrok-free.app/correct_grammar/",
+        {
+          text: newMessage.original_text,
+          language: lang,
+          user_id: userId,
+          plan: plan,
+          level: level,
+        }
+      );
+
+      if (response.status === 200) {
+        fetchData();
+        console.log("response", response.data);
+      } else {
+        alert("No correction received. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+      setTyping(false); // Stop typing animation
+      setInputText(""); // Clear input only after response
+    }
+  };
+
+  const fetchData = async () => {
+    let userId = await AsyncStorage.getItem("userId");
+    try {
+      setLoading(true);
+
+      if (plan === "Free") {
+        const response = await axios.get(
+          `https://advanced-oarfish-slightly.ngrok-free.app/get_messages_free/?user_id=${userId}`
+        );
+        setMessages(response.data);
+        console.log("response.data", response.data);
+      } else {
+        const response = await axios.get(
+          `https://advanced-oarfish-slightly.ngrok-free.app/get_messages_text/?user_id=${userId}`
+        );
+        setMessages(response.data);
+        console.log("response.data", response.data);
+      }
+    } catch (error) {
+      if (error.response.status === 400) {
+        setAlertMessage(error.response.data.detail);
+        setAlertVisible(true);
+        return;
+      }
+      console.log("error fetching data", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get("/user/profile");
+      const { plan, expertiseLevel, language } = response.data.user;
+
+      setPlan(plan);
+      setLevel(expertiseLevel);
+      setLang(language);
+      console.log(response.data);
+    } catch (error) {
+      console.log("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+    fetchData();
+  }, []);
+
+  // Typing Indicator Component
+  const TypingIndicator = () => (
+    <View style={styles.typingContainer}>
+      <Image
+        source={require("../../assets/main_logo.png")}
+        style={styles.userImage}
+      />
+      <Text style={styles.typingText}>Bot is typing...</Text>
+      <ActivityIndicator size="small" color="#4B98E5" />
+    </View>
+  );
+
+  const htmlToPlainText = (html) => {
+    return html.replace(/<\/?[^>]+(>|$)/g, "");
+  };
+
+  const handleSpeech = (text) => {
+    console.log("text", text);
+
+    if (!text) return;
+    const plainText = htmlToPlainText(text);
+    console.log("plainText", plainText);
+
+    Speech.speak(plainText, {
+      language: lang,
+      pitch: 1.1,
+      rate: 1.0,
+    });
+  };
+
+  const renderMessage = ({ item }) => (
+    <View
+      style={
+        item.sender === "user"
+          ? styles.userMessageContainer
+          : styles.botMessageContainer
+      }
+    >
+      {item.sender === "bot" && (
+        <Image
+          source={require("../../assets/main_logo.png")}
+          style={styles.userImage}
+        />
+      )}
+      <Text
+        style={
+          item.sender === "user"
+            ? styles.userMessageText
+            : styles.botMessageText
+        }
+      >
+        {/* {item.text} */}
+
+        {item.text ? (
+          <RenderHtml contentWidth={300} source={{ html: item.text }} />
+        ) : (
+          item.original_text
+        )}
+      </Text>
+      {item.sender === "bot" && (
+        <FontAwesome
+          name="file-audio-o"
+          size={18}
+          color={"#0C41FE"}
+          onPress={() => handleSpeech(item.text)}
+        />
+      )}
+      {item.sender === "user" && (
+        <Image
+          source={{
+            uri: "https://pics.craiyon.com/2023-10-28/5ad22761b9cf4196abba9a20dcc50c61.webp",
+          }}
+          style={styles.userImage}
+        />
+      )}
+    </View>
+  );
+
+  const startTimeRef = useRef(null); // Use ref instead of state to avoid stale closures
+
+  // ✅ Start Timer When User Enters
+  useEffect(() => {
+    const startTimer = () => {
+      const now = Date.now();
+      console.log("Timer started at:", now);
+      startTimeRef.current = now; // Store in ref instead of state
+    };
+
+    startTimer();
+
+    return () => {
+      // Immediately invoke async function in cleanup
+      (async () => {
+        await stopAndSaveTime();
+      })();
+    };
+  }, []);
+
+  // ✅ Stop Timer & Save Data When User Leaves
+  const stopAndSaveTime = async () => {
+    if (!startTimeRef.current) return;
+
+    const endTime = Date.now();
+    const timeSpentSeconds = Math.floor(
+      (endTime - startTimeRef.current) / 1000
+    );
+    console.log("Time spent (seconds):", timeSpentSeconds);
+
+    try {
+      let storedData = await AsyncStorage.getItem("learningTime");
+      storedData = storedData ? JSON.parse(storedData) : [];
+      const today = new Date().toISOString().split("T")[0];
+
+      const existingEntry = storedData.find((entry) => entry.date === today);
+
+      if (existingEntry) {
+        existingEntry.time += timeSpentSeconds;
+      } else {
+        storedData.push({ date: today, time: timeSpentSeconds });
+      }
+      console.log("existingEntry", existingEntry);
+
+      updateLearningTime(existingEntry?.time);
+      await AsyncStorage.setItem("learningTime", JSON.stringify(storedData));
+      console.log("Updated Learning Time:", storedData);
+    } catch (error) {
+      console.error("Error saving time:", error);
     }
   };
 
@@ -48,12 +273,24 @@ const ChatHome = ({ navigation }) => {
             <Setting navigation={navigation} />
           </TouchableOpacity>
         </View>
+        {messages.length === 0 && (
+          <View style={styles.indroduction}>
+            <Text style={{ color: "white", fontSize: 30, textAlign: "center" }}>
+              What can I help with?
+            </Text>
+          </View>
+        )}
 
-        <View style={styles.chatListContainer}>
-          <Text style={{ color: "white", fontSize: 30 }}>
-            What can i help with?
-          </Text>
-        </View>
+        <FlatList
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          style={styles.chatList}
+          contentContainerStyle={styles.chatListContainer}
+          ListFooterComponent={
+            typing ? <TypingIndicator /> : null // Show typing indicator
+          }
+        />
 
         <View style={styles.inputContainer}>
           <TextInput
@@ -62,18 +299,33 @@ const ChatHome = ({ navigation }) => {
             placeholderTextColor="#aaa"
             value={inputText}
             onChangeText={setInputText}
+            editable={!loading} // Disable input when loading
           />
-          <Ionicons name="mic" size={24} color="#fff" style={styles.micIcon} />
-          <TouchableOpacity onPress={handleSend}>
-            <Ionicons
-              name="send"
-              size={22}
+          {loading ? (
+            <ActivityIndicator
+              size="small"
               color="#fff"
-              style={styles.sendIcon}
+              style={styles.loadingIndicator}
             />
-          </TouchableOpacity>
+          ) : (
+            <>
+              <TouchableOpacity onPress={handleSend}>
+                <Ionicons
+                  name="send"
+                  size={22}
+                  color="#fff"
+                  style={styles.sendIcon}
+                />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
+      <CustomAlert
+        visible={alertVisible}
+        message={alertMessage}
+        onClose={() => setAlertVisible(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -89,8 +341,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-
-    padding: 16,
+    paddingBottom: 10,
   },
   headerTitle1: {
     color: "#4A90E2",
@@ -104,12 +355,17 @@ const styles = StyleSheet.create({
   },
   chatList: {
     flex: 1,
+    width: "100%",
   },
   chatListContainer: {
-    padding: 12,
-    marginTop: 100,
-    justifyContent: "center",
-    alignItems: "center",
+    paddingBottom: 70,
+    marginTop: 10,
+    width: "100%",
+  },
+  indroduction: {
+    paddingBottom: 70,
+    marginTop: 110,
+    width: "100%",
   },
   userMessageContainer: {
     flexDirection: "row",
@@ -119,7 +375,8 @@ const styles = StyleSheet.create({
   botMessageContainer: {
     flexDirection: "row",
     justifyContent: "flex-start",
-    alignItems: "center",
+    alignItems: "flex-end",
+    gap: 6,
     marginBottom: 16,
   },
   userMessageText: {
@@ -127,15 +384,14 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     maxWidth: "70%",
+    backgroundColor: "#333",
   },
   botMessageText: {
     color: "#4B98E5",
     padding: 10,
     borderRadius: 8,
     maxWidth: "70%",
-  },
-  icon: {
-    marginRight: 8,
+    backgroundColor: "#222",
   },
   userImage: {
     width: 30,
@@ -154,7 +410,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     width: "100%",
     position: "absolute",
-    bottom: 0,
+    bottom: 10,
     left: 10,
   },
   micIcon: {
@@ -165,9 +421,23 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     paddingHorizontal: 8,
+    height: 40,
   },
   sendIcon: {
     marginLeft: 12,
+  },
+  loadingIndicator: {
+    marginRight: 12,
+  },
+  typingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 10,
+    marginBottom: 16,
+  },
+  typingText: {
+    color: "#4B98E5",
+    marginRight: 8,
   },
 });
 

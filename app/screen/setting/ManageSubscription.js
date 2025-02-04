@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,8 +7,50 @@ import CircularButton from "../component/BackButton";
 import Setting from "../component/Setting";
 import MaskedView from "@react-native-masked-view/masked-view";
 import GradientText from "../component/GradientText";
+import axiosInstance from "../component/axiosInstance";
+import axios from "axios";
+import { useAuth } from "../component/Auth";
 
 const ManageSubscription = ({ navigation }) => {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [plan, setPlan] = useState("Free");
+  const [profileImage, setProfileImage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const { token, refreshAccessToken } = useAuth();
+  // ✅ Fetch User Profile from Backend API
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      console.log("token", token);
+
+      const response = await axiosInstance.get("/subscription/details");
+      const { startDate, endDate, type } = response.data.subscription;
+
+      setStartDate(startDate);
+      setEndDate(endDate);
+      setPlan(type);
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchProfile();
+  });
+
+  const formatDate = (dateString) => {
+    if (!dateString) return ""; // Handle empty case
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("en-US", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  };
   return (
     <SafeAreaView style={{ flexGrow: 1 }}>
       <View style={styles.container}>
@@ -57,7 +99,7 @@ const ManageSubscription = ({ navigation }) => {
             style={styles.detailItem}
           >
             <Text style={styles.label}>Begins</Text>
-            <Text style={styles.value}>8 August, 2024</Text>
+            <Text style={styles.value}>{formatDate(startDate)}</Text>
           </LinearGradient>
           <LinearGradient
             colors={[
@@ -70,7 +112,7 @@ const ManageSubscription = ({ navigation }) => {
             style={styles.detailItem}
           >
             <Text style={styles.label}>Ends</Text>
-            <Text style={styles.value}>8 September, 2024</Text>
+            <Text style={styles.value}>{formatDate(endDate)}</Text>
           </LinearGradient>
 
           <LinearGradient
@@ -84,19 +126,21 @@ const ManageSubscription = ({ navigation }) => {
             style={styles.detailItem}
           >
             <Text style={styles.label}>Type</Text>
-            <Text style={styles.value}>Premium</Text>
+            <Text style={styles.value}>{plan}</Text>
           </LinearGradient>
         </View>
 
         {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.renewButton}>
-            <Text style={styles.renewButtonText}>Renew</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.cancelButton}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
+        {plan === "free" && (
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.renewButton}>
+              <Text style={styles.renewButtonText}>Renew</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelButton}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );

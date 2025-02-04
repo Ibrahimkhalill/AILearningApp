@@ -17,19 +17,18 @@ import axiosInstance from "../component/axiosInstance";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Clipboard from "expo-clipboard";
 import CircularButton from "../component/BackButton";
+import { useAuth } from "../component/Auth";
 
-function ForgetPasswordOtp({ route, navigation }) {
-  const { email } = route.params || {};
-  const [ForgetPasswordOtpFields, setForgetPasswordOtpFields] = useState([
-    "",
-    "",
-    "",
-    "",
-  ]);
+function SignupOtpVerification({ route, navigation }) {
+  const { formData } = route.params || {};
+  const [SignupOtpVerificationFields, setSignupOtpVerificationFields] =
+    useState(["", "", "", ""]);
   const [isOtpFilled, setIsOtpFilled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(120);
   const inputRefs = useRef([]);
+
+  const { login, token } = useAuth();
 
   useEffect(() => {
     if (timeLeft === 0) return;
@@ -55,35 +54,59 @@ function ForgetPasswordOtp({ route, navigation }) {
     }
   };
 
-  const handleVerifyForgetPasswordOtp = async () => {
-    if (ForgetPasswordOtpFields.some((field) => field === "")) {
+  const handleSignup = async () => {
+    try {
+      const response = await axiosInstance.post(`/auth/signup`, {
+        email: formData.email,
+        name: formData.userName,
+        password: formData.password,
+      });
+      console.log("response.data", response.data);
+      if (response.status === 201) {
+        console.log("response", response.data);
+        login(
+          formData.email,
+          response.data.accessToken,
+          response.data.refreshToken,
+          response.data.user._id,
+          response.data?.user.language,
+          navigation
+        );
+      }
+    } catch (error) {
+      console.log("Error: " + error.message);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    console.log("call api 1");
+    if (SignupOtpVerificationFields.some((field) => field === "")) {
       notifyMessage("Please enter all OTP fields.");
       return;
     }
     if (timeLeft === 0) {
-      notifyMessage("OTP time is experid. Please resend OTP!");
-      setForgetPasswordOtpFields(["", "", "", ""]);
       if (inputRefs.current[0]) {
         inputRefs.current[0].focus();
       }
+      setSignupOtpVerificationFields(["", "", "", ""]);
+      notifyMessage("Otp time is experid. Please resend otp!");
       return;
     }
+    console.log("call api 2");
 
-    const ForgetPasswordOtp = ForgetPasswordOtpFields.join("");
+    const otp = SignupOtpVerificationFields.join("");
     setIsLoading(true);
-
+    console.log("call api 3");
     try {
       const response = await axiosInstance.post(`/auth/verify-otp`, {
-        otp: ForgetPasswordOtp,
-        email: email,
+        otp: otp,
+        email: formData.email,
       });
       if (response.status === 200) {
-        notifyMessage("Otp Verified Successfully!");
-        navigation.navigate("ResetPassword", {
-          email: email,
-        });
+        handleSignup();
+        notifyMessage("OTP Verified Successfully!");
       } else {
-        notifyMessage("Invalid Otp, please try again.");
+        notifyMessage("Invalid OTP, please try again.");
       }
     } catch (error) {
       if (error.response) {
@@ -93,10 +116,7 @@ function ForgetPasswordOtp({ route, navigation }) {
 
         // Display the error message in a toast or alert
         notifyMessage(errorMessage); // Replace with your UI feedback mechanism
-        setForgetPasswordOtpFields(["", "", "", ""]);
-        if (inputRefs.current[0]) {
-          inputRefs.current[0].focus();
-        }
+
         // Optionally set it in state to display in the UI
       } else {
         // Handle other types of errors (e.g., network issues)
@@ -106,9 +126,8 @@ function ForgetPasswordOtp({ route, navigation }) {
       setIsLoading(false);
     }
   };
-
   const handleOtpChange = (value, index) => {
-    const updatedOtpFields = [...ForgetPasswordOtpFields];
+    const updatedOtpFields = [...SignupOtpVerificationFields];
     console.log(value);
 
     if (value.length > 1) {
@@ -119,7 +138,7 @@ function ForgetPasswordOtp({ route, navigation }) {
           updatedOtpFields[index + idx] = char;
         }
       });
-      setForgetPasswordOtpFields(updatedOtpFields);
+      setSignupOtpVerificationFields(updatedOtpFields);
 
       // Move focus to the last filled field
       const lastIndex = index + pastedValues.length - 1;
@@ -131,7 +150,7 @@ function ForgetPasswordOtp({ route, navigation }) {
     } else {
       // Handle single-character input
       updatedOtpFields[index] = value;
-      setForgetPasswordOtpFields(updatedOtpFields);
+      setSignupOtpVerificationFields(updatedOtpFields);
 
       if (value && index < inputRefs.current.length - 1) {
         inputRefs.current[index + 1]?.focus(); // Move focus to the next field
@@ -139,14 +158,14 @@ function ForgetPasswordOtp({ route, navigation }) {
     }
   };
 
-  const handleResendForgetPasswordOtp = async () => {
-    setForgetPasswordOtpFields(["", "", "", ""]);
+  const handleResendSignupOtpVerification = async () => {
+    setSignupOtpVerificationFields(["", "", "", ""]);
     if (inputRefs.current[0]) {
       inputRefs.current[0].focus();
     }
     try {
-      const response = await axiosInstance.post(`/password-reset-otp/`, {
-        email: email,
+      const response = await axiosInstance.post(`/auth/password/reset`, {
+        email: formData.email,
       });
 
       if (response.status === 200) {
@@ -169,7 +188,7 @@ function ForgetPasswordOtp({ route, navigation }) {
       if (inputRefs.current[0]) {
         inputRefs.current[0].focus();
       }
-      setForgetPasswordOtpFields(["", "", "", ""]);
+      setSignupOtpVerificationFields(["", "", "", ""]);
     }, [])
   );
 
@@ -183,7 +202,7 @@ function ForgetPasswordOtp({ route, navigation }) {
         /^\d{4}$/.test(clipboardContent)
       ) {
         const otpArray = clipboardContent.split("");
-        setForgetPasswordOtpFields(otpArray);
+        setSignupOtpVerificationFields(otpArray);
         setLastClipboardContent(clipboardContent); // নতুন কন্টেন্ট সেভ করুন
         await Clipboard.setStringAsync("");
         const lastInputIndex = inputRefs.current.length - 1;
@@ -222,7 +241,7 @@ function ForgetPasswordOtp({ route, navigation }) {
         </View>
         <View className="my-5 rounded-lg w-full flex items-center">
           <View className="flex-row items-center justify-center gap-2 mt-2">
-            {ForgetPasswordOtpFields.map((field, index) => (
+            {SignupOtpVerificationFields.map((field, index) => (
               <TextInput
                 key={index}
                 ref={(el) => (inputRefs.current[index] = el)}
@@ -233,12 +252,12 @@ function ForgetPasswordOtp({ route, navigation }) {
                 onKeyPress={({ nativeEvent }) => {
                   if (
                     nativeEvent.key === "Backspace" &&
-                    ForgetPasswordOtpFields[index] === "" &&
+                    SignupOtpVerificationFields[index] === "" &&
                     index > 0
                   ) {
-                    const updatedOtp = [...ForgetPasswordOtpFields];
+                    const updatedOtp = [...SignupOtpVerificationFields];
                     updatedOtp[index - 1] = ""; // Clear previous input
-                    setForgetPasswordOtpFields(updatedOtp);
+                    setSignupOtpVerificationFields(updatedOtp);
                     inputRefs.current[index - 1]?.focus();
                   }
                 }}
@@ -247,11 +266,11 @@ function ForgetPasswordOtp({ route, navigation }) {
           </View>
 
           <TouchableOpacity
-            onPress={() => handleVerifyForgetPasswordOtp()}
+            onPress={() => handleVerifyOTP()}
             className="w-[80%] h-[50px] bg-[#8E44AD] text-white mt-10 rounded-xl flex items-center justify-center"
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color="#0000ff" />
             ) : (
               <Text className="text-center text-white text-[18px]">
                 Verify OTP
@@ -266,7 +285,7 @@ function ForgetPasswordOtp({ route, navigation }) {
               ).padStart(2, "0")}`}
             </Text>
             <TouchableOpacity
-              onPress={handleResendForgetPasswordOtp}
+              onPress={handleResendSignupOtpVerification}
               disabled={timeLeft > 0}
             >
               <Text
@@ -371,4 +390,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ForgetPasswordOtp;
+export default SignupOtpVerification;

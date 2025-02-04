@@ -94,9 +94,9 @@ const FAQPage = ({ navigation }) => {
         </ScrollView>
 
         {/* Send a Message Button */}
-        <TouchableOpacity style={styles.messageButton}>
+        {/* <TouchableOpacity style={styles.messageButton}>
           <Text style={styles.messageButtonText}>Send A Message</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </SafeAreaView>
   );

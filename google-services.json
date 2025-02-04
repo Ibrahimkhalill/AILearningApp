@@ -1,26 +1,44 @@
 {
   "project_info": {
-    "project_number": "42705403975",
-    "project_id": "push-notification-5b47e",
-    "storage_bucket": "push-notification-5b47e.firebasestorage.app"
+    "project_number": "213689067467",
+    "project_id": "ailearningauthentication",
+    "storage_bucket": "ailearningauthentication.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:42705403975:android:b255f5adffcfeb5b79f162",
+        "mobilesdk_app_id": "1:213689067467:android:0d1eb4afd3feb1320bb84e",
         "android_client_info": {
-          "package_name": "com.aininja.MedWorldApp"
+          "package_name": "com.aininja.ailearningapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "213689067467-kpr23mna03ltvqiph52sd3lqqla6f97h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aininja.ailearningapp",
+            "certificate_hash": "0ed3cb410e9f045496f17000218964c15a88df2a"
+          }
+        },
+        {
+          "client_id": "213689067467-08de6om0f6r09achc242q8211jtlg613.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyCxjpYNVB-oRzLbNt95M39a1kqfg8qEffY"
+          "current_key": "AIzaSyATtdMWzkuOnIJ56FyouDbIhHLlJGLL-Ws"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "213689067467-08de6om0f6r09achc242q8211jtlg613.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

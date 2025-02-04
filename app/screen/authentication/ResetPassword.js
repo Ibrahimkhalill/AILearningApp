@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import CircularButton from "../component/BackButton";
 import {
@@ -15,15 +16,110 @@ import {
   FontAwesome,
 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-const ResetPassword = ({ navigation }) => {
-  const [email, setEmail] = useState("");
+import axiosInstance from "../component/axiosInstance";
+const ResetPassword = ({ route, navigation }) => {
+  const { email } = route.params || {};
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isPasswordConfirmVisible, setIsPasswordConfirmVisible] =
+    useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [errors, setErrors] = useState({
+    newPassword: "",
+    confirmPassword: "",
+  });
 
-  const handleSend = () => {
-    navigation.navigate("OTPVerificationScreen");
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
   };
 
-  const handleLogin = () => {
-    navigation.navigate("login");
+  const validatePassword = (password) => {
+    const regex =
+      /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return regex.test(password);
+  };
+
+  const handlePasswordChange = (text) => {
+    setNewPassword(text);
+
+    if (text === "") {
+      setErrors((prev) => ({
+        ...prev,
+        newPassword: "Password cannot be empty",
+      }));
+    } else if (!validatePassword(text)) {
+      setErrors((prev) => ({
+        ...prev,
+        newPassword:
+          "Password must be at least 8 characters, include letters, digits, and special characters",
+      }));
+    } else {
+      setErrors((prev) => ({ ...prev, newPassword: "" }));
+    }
+  };
+
+  const handleConfirmPasswordChange = (text) => {
+    setConfirmPassword(text);
+
+    if (text === "") {
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: "Confirm Password cannot be empty",
+      }));
+    } else if (text !== newPassword) {
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: "Passwords do not match",
+      }));
+    } else {
+      setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+    }
+  };
+  const handleResetPassword = async () => {
+    // Validate if fields are empty
+    if (!newPassword) {
+      setErrors((prev) => ({
+        ...prev,
+        newPassword: "Password cannot be empty",
+      }));
+    }
+    if (!confirmPassword) {
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: "Confirm Password cannot be empty",
+      }));
+    }
+
+    // Prevent submission if any error exists
+    if (
+      errors.newPassword ||
+      errors.confirmPassword ||
+      !newPassword ||
+      !confirmPassword
+    ) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.post("/auth/password/reset/verify", {
+        email: email,
+        newPassword: newPassword,
+      });
+      console.log("====================================");
+      console.log(response);
+      console.log("====================================");
+      // Simulate successful password reset
+      if (response.status === 200) {
+        navigation.navigate("PasswordChanged");
+      }
+    } catch (error) {
+      alert("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -48,36 +144,79 @@ const ResetPassword = ({ navigation }) => {
         </Text>
 
         <View>
-          <Text className="text-[#A4A4A4] mb-2">Password</Text>
+          <Text className="text-[#A4A4A4] mb-2 mt-2">Password</Text>
           <View style={styles.inputWrapper}>
             <Ionicons name="lock-closed-outline" size={20} color="#888" />
             <TextInput
               style={styles.input}
               placeholder="*************"
-              secureTextEntry
+              onChangeText={handlePasswordChange}
+              value={newPassword}
+              secureTextEntry={!isPasswordVisible}
               placeholderTextColor="#888"
             />
+            <TouchableOpacity
+              onPress={togglePasswordVisibility}
+              className="absolute right-2 top-4"
+            >
+              <Ionicons
+                name={isPasswordVisible ? "eye" : "eye-off"}
+                size={20}
+                color="gray"
+              />
+            </TouchableOpacity>
           </View>
-          <Text className="text-[#A4A4A4] mb-2">Confirm Password</Text>
+          {errors.newPassword ? (
+            <Text className="text-red-500 text-[12px] mt-1">
+              {errors.newPassword}
+            </Text>
+          ) : null}
+          <Text className="text-[#A4A4A4] mb-2 mt-2">Confirm Password</Text>
           <View style={styles.inputWrapper}>
             <Ionicons name="lock-closed-outline" size={20} color="#888" />
             <TextInput
               style={styles.input}
               placeholder="*************"
-              secureTextEntry
+              onChangeText={handleConfirmPasswordChange}
+              value={confirmPassword}
+              secureTextEntry={!isPasswordConfirmVisible}
               placeholderTextColor="#888"
             />
+            <TouchableOpacity
+              onPress={() =>
+                setIsPasswordConfirmVisible(!isPasswordConfirmVisible)
+              }
+              className="absolute right-2 top-4"
+            >
+              <Ionicons
+                name={isPasswordConfirmVisible ? "eye" : "eye-off"}
+                size={20}
+                color="gray"
+              />
+            </TouchableOpacity>
           </View>
+          {errors.confirmPassword ? (
+            <Text className="text-red-500 text-[12px] mt-1">
+              {errors.confirmPassword}
+            </Text>
+          ) : null}
         </View>
 
-        <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+        <TouchableOpacity
+          style={styles.sendButton}
+          onPress={handleResetPassword}
+        >
           <LinearGradient
             colors={["#8E44AD", "#8E44AD"]}
             style={styles.gradientButton}
           >
-            <Text style={styles.sendButtonText} className="uppercase">
-              Reset password
-            </Text>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.sendButtonText} className="uppercase">
+                Reset password
+              </Text>
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -132,7 +271,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 8, // For Android shadow
     borderRadius: 8,
-    marginBottom: 15,
+    marginBottom: 7,
     paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: "#444",

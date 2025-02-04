@@ -25,31 +25,44 @@
         "foregroundImage": "./app/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": [
-        "INTERNET",
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
-        "com.google.android.c2dm.permission.RECEIVE"
-      ],
-      "package": "com.aininja.ailearningapp"
+      "package": "com.aininja.ailearningapp",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./app/assets/favicon.png"
     },
     "updates": {
-      "enabled": false
+      "enabled": false,
+      "url": "https://u.expo.dev/ecb9dfea-122a-4b55-adba-45f34d59891e"
     },
     "plugins": [
       "expo-font",
       "expo-localization",
       "react-native-video",
-      "expo-document-picker"
+      "expo-document-picker",
+      "expo-asset",
+      "@react-native-google-signin/google-signin",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "579125941688038",
+          "clientToken": "c69f0ebb7d9b3245958a87cf6bcf974e",
+          "displayName": "ailearningapp",
+          "scheme": "fb579125941688038",
+          "advertiserIDCollectionEnabled": false,
+          "autoLogAppEventsEnabled": false,
+          "isAutoInitEnabled": true,
+          "iosUserTrackingPermission": "This identifier will be used to deliver personalized ads to you."
+        }
+      ],
+      "expo-tracking-transparency"
     ],
     "extra": {
       "eas": {
         "projectId": "ecb9dfea-122a-4b55-adba-45f34d59891e"
       }
     },
-    "owner": "aininja"
+    "owner": "aininja",
+    "runtimeVersion": "1.0.0"
   }
 }

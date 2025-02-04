@@ -19,7 +19,7 @@ export default function FreeCard() {
           "Basic progress tracking",
           "Immersive scenario",
           "Basic translation",
-          "Tex conversation",
+          "Text conversation",
         ].map((feature, index) => (
           <View key={index} style={styles.featureItem}>
             <Ionicons name="checkmark-circle" size={20} color="#00FF00" />

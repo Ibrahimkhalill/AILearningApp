@@ -75,7 +75,7 @@ const TermsConditions = ({ navigation }) => {
           </Text>
         </ScrollView>
       </View>
-      <CustomNavigationBar navigation={navigation} />
+      {/* <CustomNavigationBar navigation={navigation} /> */}
     </SafeAreaView>
   );
 };
@@ -85,7 +85,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#121212",
     padding: 16,
-    paddingBottom: 80,
   },
   header: {
     flexDirection: "row",

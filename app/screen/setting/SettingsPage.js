@@ -29,7 +29,7 @@ const SettingsPage = ({ navigation }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity>
-            <CircularButton />
+            <CircularButton navigation={navigation} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Setting</Text>
           <Switch
@@ -133,7 +133,7 @@ const SettingsPage = ({ navigation }) => {
           </LinearGradient>
         </TouchableOpacity>
 
-        <LogoutModal />
+        <LogoutModal navigation={navigation} />
       </View>
     </SafeAreaView>
   );

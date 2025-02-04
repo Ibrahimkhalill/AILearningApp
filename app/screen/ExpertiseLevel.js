@@ -3,17 +3,30 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CircularButton from "./component/BackButton";
+import axiosInstance from "./component/axiosInstance";
 
 export default function ExpertiseLevel({ navigation }) {
   const [selectedLevel, setSelectedLevel] = useState(null);
 
-  const handleNext = () => {
-    if (!selectedLevel) {
-      Alert.alert("Select a level", "Please select your expertise level.");
-      return;
+  // const handleNext = () => {
+  //   if (!selectedLevel) {
+  //     Alert.alert("Select a level", "Please select your expertise level.");
+  //     return;
+  //   }
+  //   navigation.navigate("DailyGoalScreen");
+  // };
+
+  const handleNext = async (language) => {
+    try {
+      const response = await axiosInstance.put("/user/profile", {
+        expertiseLevel: selectedLevel,
+      });
+      if (response.status === 200) {
+        navigation.navigate("DailyGoalScreen");
+      }
+    } catch (error) {
+      console.log("Error updating profile:", error);
     }
-    navigation.navigate("DailyGoalScreen");
-    Alert.alert("Selected Level", `You chose: ${selectedLevel}`);
   };
 
   return (

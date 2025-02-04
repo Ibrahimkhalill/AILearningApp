@@ -7,100 +7,234 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import CustomCheckbox from "../component/CustomCheckbox";
-import {
-  Ionicons,
-  MaterialCommunityIcons,
-  FontAwesome,
-} from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../component/Auth";
+import ErrorModal from "../component/ErrorModal";
+import axiosInstance from "../component/axiosInstance";
 
 export default function Login({ navigation }) {
-  const [isChecked, setChecked] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorVisible, setErrorVisible] = useState(false);
+  const { login, token } = useAuth();
+  const [passwordVisible, setPasswordVisible] = useState(false); // For password visibility toggle
+  // Handle field changes and validations
+  const handleTextChange = (field, value) => {
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      [field]: value,
+    }));
+
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [field]: "", // Clear error for the field
+    }));
+  };
+
+  // Validate email format
+  const validateEmail = (email) => {
+    const emailRegex = /\S+@\S+\.\S+/;
+    return emailRegex.test(email);
+  };
+
+  // Handle Login Submission
+  const handleUserLogin = async () => {
+    const formErrors = {};
+
+    // Validate fields
+    if (!formData.email) {
+      formErrors.email = "Email Address is required.";
+    } else if (!validateEmail(formData.email)) {
+      formErrors.email = "Invalid Email Address.";
+    }
+
+    if (!formData.password) {
+      formErrors.password = "Password is required.";
+    }
+
+    // If there are errors, display them
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await axiosInstance.post("/auth/login", {
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (response.status === 200) {
+        console.log("response.data._id", response.data.user._id);
+
+        login(
+          formData.email,
+          response.data.accessToken,
+          response.data.refreshToken,
+          response.data.user._id,
+          response.data?.user?.language,
+          navigation
+        );
+      } else {
+        setErrorVisible(true);
+        setError("Invalid email or password");
+      }
+    } catch (error) {
+      if (error.response) {
+        console.log("Error without response:", error);
+        // If the server returned a response (e.g., 400 status)
+        const serverErrors = error.response.data.message; // Adjust based on your API structure
+        const formErrors = { email: "", password: "" };
+
+        setErrors(formErrors);
+        setErrorVisible(true);
+        setError(serverErrors);
+      } else {
+        // Handle other types of errors (e.g., network issues)
+        console.log("Error without response:", error.message);
+        setErrorVisible(true);
+        setError("Network error. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <ScrollView>
+    <SafeAreaView style={{ flexGrow: 1 }}>
       <View style={styles.container}>
-        <Image
-          source={require("../../assets/login.png")} // Replace with your image
-          style={styles.image}
-          resizeMode="contain"
-        />
-        <Text style={styles.header}>Welcome Back!</Text>
-        <Text style={styles.subHeader}>
-          Start learning your favorite language
-        </Text>
-
-        <View style={styles.inputContainer}>
-          <Text className="text-[#A4A4A4] mb-2">Email Address</Text>
-          <View style={styles.inputWrapper}>
-            <MaterialCommunityIcons
-              name="email-outline"
-              size={20}
-              color="#888"
-              style={styles.icon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Email Address"
-              placeholderTextColor="#888"
-            />
-          </View>
-          <Text className="text-[#A4A4A4] mb-2">Password</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons
-              name="lock-closed-outline"
-              size={20}
-              color="#888"
-              style={styles.icon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="*************"
-              secureTextEntry
-              placeholderTextColor="#888"
-            />
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.checkboxContainer}
-          onPress={() => navigation.navigate("ForgotPassword")}
+        <ScrollView
+          contentContainerStyle={{ alignItems: "center" }}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 1 }}
         >
-          <Text style={styles.checkboxLabel}>Forget Password?</Text>
-        </TouchableOpacity>
+          {/* Logo/Image */}
+          <Image
+            source={require("../../assets/login.png")} // Replace with your image
+            style={styles.image}
+            resizeMode="contain"
+          />
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate("language")}
-        >
-          <LinearGradient
-            colors={["#8E44AD", "#8E44AD"]}
-            style={styles.gradientButton}
+          {/* Header */}
+          <Text style={styles.header}>Welcome Back!</Text>
+          <Text style={styles.subHeader}>
+            Start learning your favorite language
+          </Text>
+
+          {/* Input Fields */}
+          <View style={styles.inputContainer}>
+            {/* Email */}
+            <Text style={styles.label}>Email Address</Text>
+            <View
+              style={[
+                styles.inputWrapper,
+                errors.email && { borderColor: "red" }, // Highlight border if error
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color="#888"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Email Address"
+                placeholderTextColor="#888"
+                value={formData.email}
+                onChangeText={(value) => handleTextChange("email", value)}
+              />
+              {errors.email && (
+                <Text style={styles.errorText}>{errors.email}</Text>
+              )}
+            </View>
+
+            {/* Password */}
+            <Text style={styles.label}>Password</Text>
+            <View
+              style={[
+                styles.inputWrapper,
+                errors.password && { borderColor: "red" }, // Highlight border if error
+              ]}
+            >
+              <Ionicons name="lock-closed-outline" size={20} color="#888" />
+              <TextInput
+                style={styles.input}
+                placeholder="*************"
+                secureTextEntry={!passwordVisible}
+                placeholderTextColor="#888"
+                value={formData.password}
+                onChangeText={(value) => handleTextChange("password", value)}
+              />
+              <TouchableOpacity
+                onPress={() => setPasswordVisible(!passwordVisible)}
+              >
+                <Ionicons
+                  name={passwordVisible ? "eye-off" : "eye"}
+                  size={20}
+                  color="#888"
+                />
+              </TouchableOpacity>
+              {errors.password && (
+                <Text style={styles.errorText}>{errors.password}</Text>
+              )}
+            </View>
+          </View>
+
+          {/* Forgot Password */}
+          <TouchableOpacity
+            style={styles.checkboxContainer}
+            onPress={() => navigation.navigate("ForgotPassword")}
           >
-            <Text style={styles.buttonText}>SIGN IN</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        <Text style={styles.orText}>Or continue with</Text>
-
-        <View style={styles.socialButtons}>
-          <TouchableOpacity style={styles.socail_button}>
-            <Ionicons name="logo-google" size={30} color="#DB4437" />
+            <Text style={styles.checkboxLabel}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          {/* <TouchableOpacity style={styles.socail_button}>
-            <MaterialCommunityIcons name="apple" size={30} color="#FFFFFF" />
-          </TouchableOpacity> */}
-
-          <TouchableOpacity style={styles.socail_button}>
-            <FontAwesome5 name="facebook" size={30} color="#0A66C2" />
+          {/* Login Button */}
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleUserLogin}
+            disabled={isLoading}
+          >
+            <LinearGradient
+              colors={["#8E44AD", "#8E44AD"]}
+              style={styles.gradientButton}
+            >
+              <Text style={styles.buttonText}>
+                {isLoading ? "Signing In..." : "SIGN IN"}
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
-        </View>
+
+          {/* Social Login */}
+          <Text style={styles.orText}>Or continue with</Text>
+          <View style={styles.socialButtons}>
+            <TouchableOpacity style={styles.socialButton}>
+              <Ionicons name="logo-google" size={30} color="#DB4437" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialButton}>
+              <FontAwesome5 name="facebook" size={30} color="#0A66C2" />
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+        <ErrorModal
+          message={error}
+          isVisible={errorVisible}
+          onClose={() => setErrorVisible(false)}
+        />
       </View>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -108,23 +242,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#121212",
-    alignItems: "center",
-    padding: 20,
-  },
-  socail_button: {
-    width: 60,
-    height: 52,
-    backgroundColor: "#1E1E1E",
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8, // For Android shadow
-    borderWidth: 1,
-    borderColor: "#444",
+    padding: 10,
   },
   image: {
     width: 350,
@@ -145,25 +263,21 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     width: "100%",
-    marginBottom: 1,
+    marginBottom: 20,
+  },
+  label: {
+    color: "#A4A4A4",
+    marginBottom: 5,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#1E1E1E",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8, // For Android shadow
+    paddingHorizontal: 10,
     borderRadius: 8,
     marginBottom: 15,
-    paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: "#444",
-  },
-  icon: {
-    marginRight: 3,
   },
   input: {
     flex: 1,
@@ -171,15 +285,20 @@ const styles = StyleSheet.create({
     padding: 15,
     fontSize: 14,
   },
+  errorText: {
+    position: "absolute",
+    left: 0,
+    bottom: -26,
+    color: "red",
+    fontSize: 12,
+    marginBottom: 10,
+  },
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
     marginBottom: 20,
     width: "100%",
-  },
-  checkbox: {
-    marginRight: 10,
   },
   checkboxLabel: {
     color: "#27AE60",
@@ -206,9 +325,21 @@ const styles = StyleSheet.create({
     color: "#AAAAAA",
     marginBottom: 10,
   },
+
   socialButtons: {
     flexDirection: "row",
     justifyContent: "space-evenly",
     width: "70%",
+  },
+  socialButton: {
+    width: 60,
+    height: 52,
+    backgroundColor: "#1E1E1E",
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: "#444",
   },
 });

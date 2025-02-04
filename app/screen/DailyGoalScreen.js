@@ -9,22 +9,28 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CircularButton from "./component/BackButton";
+import axiosInstance from "./component/axiosInstance";
 
 export default function DailyGoalScreen({ navigation }) {
   const [selectedGoal, setSelectedGoal] = useState(null);
 
-  const goals = [
-    "15 Min",
-    "30 Min",
-    "45 Min",
-    "50 Min",
-    "90 Min",
-    "120 Min",
-    "Other",
-  ];
+  const goals = ["15", "30 ", "45 ", "50 ", "90 ", "120"];
 
   const handleGoalSelection = (goal) => {
     setSelectedGoal(goal);
+  };
+
+  const handleNext = async (language) => {
+    try {
+      const response = await axiosInstance.put("/user/profile", {
+        dailyGoal: parseInt(selectedGoal),
+      });
+      if (response.status === 200) {
+        navigation.navigate("dashborad");
+      }
+    } catch (error) {
+      console.log("Error updating profile:", error);
+    }
   };
 
   return (
@@ -54,7 +60,7 @@ export default function DailyGoalScreen({ navigation }) {
                   selectedGoal === goal && styles.selectedGoalButtonText,
                 ]}
               >
-                {goal}
+                {goal} Min
               </Text>
             </TouchableOpacity>
           ))}
@@ -63,7 +69,7 @@ export default function DailyGoalScreen({ navigation }) {
         {/* Get Started Button */}
         <TouchableOpacity
           style={styles.getStartedButton}
-          onPress={() => navigation.navigate("dashborad")}
+          onPress={() => handleNext()}
         >
           <Text style={styles.getStartedButtonText}>Get Started</Text>
         </TouchableOpacity>

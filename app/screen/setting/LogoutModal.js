@@ -14,7 +14,9 @@ import {
   MaterialCommunityIcons,
   MaterialIcons,
 } from "@expo/vector-icons";
-const LogoutModal = () => {
+import { useAuth, token } from "../component/Auth";
+const LogoutModal = ({ navigation }) => {
+  const { logout, token } = useAuth();
   const [visible, setVisible] = useState(false);
   const slideAnim = React.useRef(
     new Animated.Value(Dimensions.get("window").height)
@@ -35,6 +37,13 @@ const LogoutModal = () => {
       duration: 300,
       useNativeDriver: true,
     }).start(() => setVisible(false));
+  };
+
+  const handleLogout = () => {
+    logout();
+    if (!token) {
+      navigation.navigate("login");
+    }
   };
 
   return (
@@ -84,7 +93,7 @@ const LogoutModal = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.logoutButton}
-              onPress={() => console.log("Logged Out")}
+              onPress={() => handleLogout()}
             >
               <Text style={styles.logoutButtonText}>Logout</Text>
             </TouchableOpacity>

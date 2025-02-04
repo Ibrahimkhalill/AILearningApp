@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   ScrollView,
   Dimensions,
   FlatList,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import {
   Ionicons,
@@ -15,7 +17,7 @@ import {
   MaterialCommunityIcons,
   AntDesign,
 } from "@expo/vector-icons";
-
+import { WebView } from "react-native-webview";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomNavigationBar from "./component/CustomNavigationBar";
 import { LinearGradient } from "expo-linear-gradient";
@@ -24,9 +26,17 @@ import NextButton from "./component/NextButton";
 import PremiumCard from "./component/PremiumCard";
 import FreeCard from "./component/FreeCard";
 import CircularProgress from "./component/CircularProgress";
-
+import axiosInstance from "./component/axiosInstance";
+import Premium from "../assets/premimum.svg";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { useLearningTime } from "./component/LearningTimeContext";
 export default function Dashboard({ navigation }) {
   const { width } = Dimensions.get("window");
+  const [loading, setLoading] = useState(false);
+  const [plan, setPlan] = useState("");
+  const [goal, setGoal] = useState("");
+  const { learningTime } = useLearningTime(); // Get learning time and update function
 
   const CARD_WIDTH = width * 0.8; // Each card takes up 70% of the screen
   const CARD_SPACING = 16;
@@ -62,6 +72,81 @@ export default function Dashboard({ navigation }) {
       navigateTo: "Shooping",
     },
   ];
+
+  const [checkoutUrl, setCheckoutUrl] = useState(null); // Store the checkout URL
+
+  const createCheckoutSession = async () => {
+    console.log("hellow");
+
+    try {
+      setLoading(true);
+      console.log("ffff");
+      const response = await axiosInstance.post(
+        "/subscription/stripe-session", // Your backend endpoint
+        {} // Replace with the actual price ID
+      );
+      console.log(response.data);
+
+      setCheckoutUrl(response.data.url); // Save the checkout URL
+    } catch (error) {
+      Alert.alert("Error", "Failed to create checkout session.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get("/user/profile");
+      const { plan, dailyGoal } = response.data.user;
+
+      setPlan(plan);
+      setGoal(dailyGoal);
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const handleNavigationStateChange = (navState) => {
+    console.log("navState", navState);
+
+    if (navState.url.includes("/api/subscription/stripe-success")) {
+      // Removed trailing slash
+      setCheckoutUrl(null); // Close the WebView
+      fetchProfile();
+      navigation.navigate("dashboard"); // Fixed spelling
+      Alert.alert("Success", "Subscription successful!");
+    } else if (navState.url.includes("/api/subscription/stripe-cancel")) {
+      // Removed trailing slash
+      setCheckoutUrl(null); // Close the WebView
+    }
+  };
+
+  if (checkoutUrl) {
+    // Render the WebView if a checkout URL is available
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <WebView
+          source={{ uri: checkoutUrl }}
+          onNavigationStateChange={handleNavigationStateChange}
+          startInLoadingState
+          renderLoading={() => (
+            <ActivityIndicator size="large" color="#FFDC58" />
+          )}
+        />
+      </SafeAreaView>
+    );
+  }
+
   const renderItem2 = ({ item }) => (
     <TouchableOpacity style={styles.scenarioCard}>
       <Text style={styles.scenarioTitle}>{item.title}</Text>
@@ -79,34 +164,46 @@ export default function Dashboard({ navigation }) {
       </View>
     </TouchableOpacity>
   );
+
   return (
     <SafeAreaView style={{ flexGrow: 1 }}>
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           {/* Greeting Section */}
-          <View style={styles.greetingSection}>
-            <Text style={styles.greetingTitle}>Good Morning</Text>
-            <Text style={styles.greetingSubtitle}>Ready For A New Lesson</Text>
-            <LinearGradient
-              colors={["#8E44AD", "#4A90E2"]}
-              style={styles.premiumCard}
-            >
-              <View>
-                <Text style={styles.premiumTitle}>Premium Plan</Text>
-                <Text style={styles.premiumSubtitle}>
-                  Unlock features and get AI recommendations
-                </Text>
-                <TouchableOpacity style={styles.upgradeButton}>
-                  <Text style={styles.upgradeButtonText}>Upgrade</Text>
-                </TouchableOpacity>
-              </View>
+          {plan === "Free" ? (
+            <View style={styles.greetingSection}>
+              <Text style={styles.greetingTitle}>Good Morning</Text>
+              <Text style={styles.greetingSubtitle}>
+                Ready For A New Lesson
+              </Text>
+              <LinearGradient
+                colors={["#8E44AD", "#4A90E2"]}
+                style={styles.premiumCard}
+              >
+                <View>
+                  <Text style={styles.premiumTitle}>Premium Plan</Text>
+                  <Text style={styles.premiumSubtitle}>
+                    Unlock features and get AI recommendations
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.upgradeButton}
+                    onPress={createCheckoutSession}
+                  >
+                    <Text style={styles.upgradeButtonText}>Upgrade</Text>
+                  </TouchableOpacity>
+                </View>
 
-              <Image
-                source={require("../assets/robot.png")}
-                style={styles.premiumImage}
-              />
-            </LinearGradient>
-          </View>
+                <Image
+                  source={require("../assets/robot.png")}
+                  style={styles.premiumImage}
+                />
+              </LinearGradient>
+            </View>
+          ) : (
+            <View style={{ paddingLeft: 10 }}>
+              <Premium />
+            </View>
+          )}
 
           {/* Statistics Section */}
           <View style={styles.section}>
@@ -121,11 +218,16 @@ export default function Dashboard({ navigation }) {
               end={{ x: 1, y: 0 }} // Ending point (top-right)
               style={[styles.gradient, styles.statRow]}
             >
-              <Text style={styles.statText}>Learning Times: 5 hours</Text>
-              <CircularProgress percentage={20} />
+              <Text style={styles.statText}>
+                Learning Time: {learningTime.minutes} minutes
+              </Text>
+
+              <CircularProgress
+                percentage={Math.round((learningTime.minutes / goal) * 100)}
+              />
               {/* <Ionicons name="time-outline" size={20} color="#FFFFFF" /> */}
             </LinearGradient>
-            <LinearGradient
+            {/* <LinearGradient
               colors={[
                 "rgba(255, 255, 255, 0.1)", // 0% opacity: Fully visible white
                 "rgba(255, 255, 255, 0.2)", // 77% opacity: 22% visible white
@@ -137,7 +239,7 @@ export default function Dashboard({ navigation }) {
             >
               <Text style={styles.statText}>New Words: 25 words</Text>
               <Ionicons name="bar-chart-outline" size={20} color="#FFFFFF" />
-            </LinearGradient>
+            </LinearGradient> */}
           </View>
 
           {/* Options Section */}
@@ -179,7 +281,9 @@ export default function Dashboard({ navigation }) {
               </View>
             </TouchableOpacity>
           </View>
-
+          <Text style={[styles.sectionTitle, { paddingLeft: 15 }]}>
+            Practical Scenarios
+          </Text>
           {/* Practical Scenarios */}
           <FlatList
             data={scenarios}
@@ -189,24 +293,20 @@ export default function Dashboard({ navigation }) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.scenarioRow}
           />
-          <View className="px-1">
-            <FlatList
-              data={cardComponents}
-              renderItem={renderItem}
-              keyExtractor={(item) => item.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              snapToInterval={CARD_WIDTH + CARD_SPACING}
-              decelerationRate="fast"
-              contentContainerStyle={{ paddingHorizontal: CARD_SPACING / 2 }}
-            />
-          </View>
-          {/* Select A Plan */}
-          {/* <View style={styles.greetingSection}>
-            <Text style={styles.sectionTitle}>Select a plan</Text>
-            <PremiumCard />
-            <FreeCard />
-          </View> */}
+          {plan === "Free" && (
+            <View className="px-1">
+              <FlatList
+                data={cardComponents}
+                renderItem={renderItem}
+                keyExtractor={(item) => item.id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={CARD_WIDTH + CARD_SPACING}
+                decelerationRate="fast"
+                contentContainerStyle={{ paddingHorizontal: CARD_SPACING / 2 }}
+              />
+            </View>
+          )}
         </ScrollView>
 
         {/* Bottom Navigation */}
@@ -281,6 +381,11 @@ const styles = StyleSheet.create({
   upgradeButtonText: {
     color: "#FFF",
     fontWeight: "bold",
+  },
+  safeArea: {
+    flexGrow: 1,
+    paddingBottom: 10,
+    backgroundColor: "white",
   },
   premiumImage: {
     width: 110,
