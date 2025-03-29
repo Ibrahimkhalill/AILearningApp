@@ -15,7 +15,7 @@ import EditButton from "../component/EditButton";
 
 const AfterVoice = ({ navigation }) => {
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1 , backgroundColor:"#121212" }}>
       <ScrollView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity>

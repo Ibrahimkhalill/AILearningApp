@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  TextInput,
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,26 +11,27 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import CircularButton from "../component/BackButton";
 import Setting from "../component/Setting";
 import GradientText from "../component/GradientText";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 const FAQPage = ({ navigation }) => {
+  const { t } = useTranslation(); // Initialize translation hook
+
   const faqData = [
     {
-      question: "What Is LangSwap",
-      answer: "LangSwap is a platform for language exchange and learning.",
+      question: t("what_is_langswap"),
+      answer: t("langswap_description"),
     },
     {
-      question: "Is LangSwap Free To Use",
-      answer:
-        "Yes, LangSwap offers a free tier with optional premium features.",
+      question: t("is_langswap_free"),
+      answer: t("langswap_free_tier"),
     },
     {
-      question: "What Does The Premium Version Offer",
-      answer:
-        "The premium version offers additional features like advanced matching and ad-free experience.",
+      question: t("what_does_premium_offer"),
+      answer: t("premium_features"),
     },
     {
-      question: "How Do I Contact Support",
-      answer: "You can contact support via email at support@langswap.com.",
+      question: t("how_do_i_contact_support"),
+      answer: t("contact_support_email"),
     },
   ];
 
@@ -42,36 +42,21 @@ const FAQPage = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor: "#121212" }}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <CircularButton navigation={navigation} />
-          <Text style={styles.headerTitle}>Help Desk</Text>
+          <Text style={styles.headerTitle}>{t("help_desk")}</Text>
           <Setting navigation={navigation} />
         </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Ionicons
-            name="search"
-            size={20}
-            color="#aaa"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search Help"
-            placeholderTextColor="#aaa"
-          />
-        </View>
-
         {/* Support Text */}
-        <Text style={styles.supportText}>Support for all your needs on</Text>
-        <GradientText text={"LangSwap"} />
+        <Text style={styles.supportText}>{t("support_for_all_needs_on")}</Text>
+        <GradientText text={t("lang_swap")} />
 
         {/* FAQ Section */}
-        <Text style={styles.faqHeader}>FAQ</Text>
+        <Text style={styles.faqHeader}>{t("faq")}</Text>
         <ScrollView style={styles.faqContainer}>
           {faqData.map((item, index) => (
             <View key={index}>
@@ -93,9 +78,9 @@ const FAQPage = ({ navigation }) => {
           ))}
         </ScrollView>
 
-        {/* Send a Message Button */}
+        {/* Send a Message Button (Commented out in original, but included for completeness) */}
         {/* <TouchableOpacity style={styles.messageButton}>
-          <Text style={styles.messageButtonText}>Send A Message</Text>
+          <Text style={styles.messageButtonText}>{t("send_message")}</Text>
         </TouchableOpacity> */}
       </View>
     </SafeAreaView>
@@ -119,38 +104,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1E1E1E",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#8E44AD",
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    color: "#fff",
-    fontSize: 16,
-  },
   supportText: {
     color: "#fff",
     textAlign: "center",
     fontSize: 21,
     fontWeight: "600",
     marginBottom: 4,
-  },
-  appName: {
-    color: "#8E44AD",
-    textAlign: "center",
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
   },
   faqHeader: {
     color: "#fff",
@@ -182,7 +141,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     padding: 10,
     paddingLeft: 13,
-
     borderRadius: 8,
     marginTop: -10,
     marginBottom: 12,

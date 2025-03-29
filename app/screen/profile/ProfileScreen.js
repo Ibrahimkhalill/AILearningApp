@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react"; // ✅ Fixed import
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { useAuth } from "../component/Auth";
 import * as ImagePicker from "expo-image-picker";
 import LanguageSelector from "../component/LanguageSelector";
 import DynamicDropdown from "../component/DynamicDropdown";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 const ProfileScreen = ({ navigation }) => {
   const [name, setName] = useState("");
@@ -32,19 +33,21 @@ const ProfileScreen = ({ navigation }) => {
   const { token } = useAuth();
   const [dailyGoal, setDailyGoal] = useState("");
   const [expertiseLevel, setExpertiseLevel] = useState("");
+  const [openLanguage, setOpenLanguage] = useState(false); // Fixed typo: 'langauage' to 'Language'
+  const { t, i18n } = useTranslation(); // Initialize translation hook
 
   const goal = [
-    { label: "15", value: "15" },
-    { label: "30", value: "30" },
-    { label: "45", value: "45" },
-    { label: "50", value: "50" },
-    { label: "90", value: "90" },
-    { label: "120", value: "120" },
+    { label: t("daily_goal_15"), value: "15" },
+    { label: t("daily_goal_30"), value: "30" },
+    { label: t("daily_goal_45"), value: "45" },
+    { label: t("daily_goal_50"), value: "50" },
+    { label: t("daily_goal_90"), value: "90" },
+    { label: t("daily_goal_120"), value: "120" },
   ];
   const level = [
-    { label: "Beginner", value: "Beginner" },
-    { label: "Intermedlate", value: "Intermedlate" },
-    { label: "Advanced", value: "Advanced" },
+    { label: t("level_beginner"), value: "Beginner" },
+    { label: t("level_intermediate"), value: "Intermediate" }, // Fixed typo: 'Intermedlate' to 'Intermediate'
+    { label: t("level_advanced"), value: "Advanced" },
   ];
 
   // ✅ Fetch User Profile from Backend API
@@ -60,7 +63,7 @@ const ProfileScreen = ({ navigation }) => {
       setEmail(email);
       setLanguage(language);
       setProfileImage(profileImage);
-      setDailyGoal(response.data.user.dailyGoal);
+      setDailyGoal(dailyGoal.toString()); // Ensure dailyGoal is a string for comparison
       setExpertiseLevel(expertiseLevel);
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -77,8 +80,8 @@ const ProfileScreen = ({ navigation }) => {
       await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
       Alert.alert(
-        "Permission Required",
-        "Please grant camera roll permissions to update your profile picture."
+        t("permission_required"),
+        t("camera_roll_permission_needed")
       );
       return;
     }
@@ -118,11 +121,11 @@ const ProfileScreen = ({ navigation }) => {
       );
 
       if (response.status === 200) {
-        Alert.alert("Success", "Profile picture updated!");
+        Alert.alert(t("success"), t("profile_picture_updated"));
       }
     } catch (error) {
       console.error("Error uploading image:", error);
-      Alert.alert("Error", "Failed to update profile picture.");
+      Alert.alert(t("error"), t("failed_update_profile_picture"));
     } finally {
       setUpdating(false);
     }
@@ -131,26 +134,29 @@ const ProfileScreen = ({ navigation }) => {
   // ✅ Update Profile Data
   const updateProfile = async () => {
     if (!name.trim() || !email.trim()) {
-      Alert.alert("Error", "Name and Email cannot be empty.");
+      Alert.alert(t("error"), t("name_email_cannot_be_empty"));
       return;
     }
+
+    console.log("expertiseLevel", expertiseLevel);
 
     setUpdating(true);
     try {
       const response = await axiosInstance.put("/user/profile", {
         name,
         language,
-        dailyGoal,
-        exexpertiseLevel: expertiseLevel,
+        dailyGoal: parseInt(dailyGoal, 10), // Convert to integer for backend
+        expertiseLevel,
       });
 
       if (response.status === 200) {
-        Alert.alert("Success", "Profile updated successfully!");
+        await i18n.changeLanguage(language); // Update the app's language
+        Alert.alert(t("success"), t("profile_updated_successfully"));
         setIsEditing(false);
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      Alert.alert("Error", "Failed to update profile.");
+      Alert.alert(t("error"), t("failed_update_profile"));
     } finally {
       setUpdating(false);
     }
@@ -160,6 +166,7 @@ const ProfileScreen = ({ navigation }) => {
   useEffect(() => {
     fetchProfile();
   }, []);
+
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
@@ -167,13 +174,14 @@ const ProfileScreen = ({ navigation }) => {
       </View>
     );
   }
+
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor: "#121212" }}>
       <ScrollView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <CircularButton navigation={navigation} />
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={styles.headerTitle}>{t("profile")}</Text>
           <Setting navigation={navigation} />
         </View>
 
@@ -194,7 +202,7 @@ const ProfileScreen = ({ navigation }) => {
 
         <View style={styles.inputContainer}>
           {/* Full Name */}
-          <Text style={styles.label}>Full Name</Text>
+          <Text style={styles.label}>{t("full_name")}</Text>
           <View style={styles.inputWrapper}>
             <Ionicons
               name="person"
@@ -206,51 +214,56 @@ const ProfileScreen = ({ navigation }) => {
               style={styles.input}
               value={name}
               onChangeText={setName}
-              placeholder="Enter your full name"
+              placeholder={t("enter_full_name")}
               placeholderTextColor="#aaa"
               editable={isEditing}
             />
           </View>
 
           {/* Email */}
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>{t("email")}</Text>
           <View style={styles.inputWrapper}>
             <Ionicons name="mail" size={20} color="#aaa" style={styles.icon} />
             <TextInput
               style={styles.input}
               value={email}
-              placeholder="Enter your email"
+              placeholder={t("enter_email")}
               placeholderTextColor="#aaa"
               readOnly
             />
           </View>
 
           {/* Language */}
-          <Text style={styles.label}>Language</Text>
+          <Text style={styles.label}>{t("language")}</Text>
           <LanguageSelector
             onLanguageChange={setLanguage}
             selectedLanguage={language}
             isEditing={isEditing}
+            setOpen={setOpenLanguage}
+            open={openLanguage}
           />
 
-          <Text style={styles.label}>Daily Goal</Text>
+          {!openLanguage && (
+            <>
+              <Text style={styles.label}>{t("daily_goal")}</Text>
+              <DynamicDropdown
+                onLanguageChange={setDailyGoal}
+                isEditing={isEditing}
+                dailyGoal={dailyGoal}
+                data={goal}
+                label={t("select_daily_goal")}
+              />
 
-          <DynamicDropdown
-            onLanguageChange={setDailyGoal}
-            isEditing={isEditing}
-            dailyGoal={dailyGoal}
-            data={goal}
-            label={"Select a Daily Goal"}
-          />
-
-          <Text style={styles.label}>Expertise Level</Text>
-          <DynamicDropdown
-            onLanguageChange={setExpertiseLevel}
-            isEditing={isEditing}
-            dailyGoal={expertiseLevel}
-            data={level}
-            label={"Select a Expertise Level"}
-          />
+              <Text style={styles.label}>{t("expertise_level")}</Text>
+              <DynamicDropdown
+                onLanguageChange={setExpertiseLevel}
+                isEditing={isEditing}
+                dailyGoal={expertiseLevel}
+                data={level}
+                label={t("select_expertise_level")}
+              />
+            </>
+          )}
 
           {/* Edit Profile Button */}
           {!isEditing ? (
@@ -258,7 +271,9 @@ const ProfileScreen = ({ navigation }) => {
               style={styles.editProfileButton}
               onPress={() => setIsEditing(true)}
             >
-              <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+              <Text style={styles.editProfileButtonText}>
+                {t("edit_profile")}
+              </Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -270,7 +285,7 @@ const ProfileScreen = ({ navigation }) => {
                 <ActivityIndicator color="white" />
               ) : (
                 <Text style={styles.updateProfileButtonText}>
-                  Update Profile
+                  {t("update_profile")}
                 </Text>
               )}
             </TouchableOpacity>
@@ -288,7 +303,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#121212", // Optional background color
   },
-  container: { flex: 1, backgroundColor: "#121212", padding: 16 },
+  container: {
+    flex: 1,
+    backgroundColor: "#121212",
+    padding: 16,
+    paddingBottom: 20,
+    zIndex: 1, // Lower z-index for the container to avoid conflict
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -312,7 +333,7 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 20,
   },
-  inputContainer: { marginVertical: 16 },
+  inputContainer: { marginVertical: 16, paddingBottom: 10 },
   label: { color: "#fff", marginBottom: 8, fontSize: 14 },
   inputWrapper: {
     flexDirection: "row",
@@ -333,7 +354,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    height : 55
+    height: 55,
+    
   },
   editProfileButtonText: {
     color: "#fff",

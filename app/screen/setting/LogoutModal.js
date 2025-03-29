@@ -14,13 +14,17 @@ import {
   MaterialCommunityIcons,
   MaterialIcons,
 } from "@expo/vector-icons";
-import { useAuth, token } from "../component/Auth";
+import { useAuth } from "../component/Auth";
+
+import { useTranslation } from "react-i18next"; // Import useTranslation
+
 const LogoutModal = ({ navigation }) => {
   const { logout, token } = useAuth();
   const [visible, setVisible] = useState(false);
   const slideAnim = React.useRef(
     new Animated.Value(Dimensions.get("window").height)
   ).current;
+  const { t } = useTranslation(); // Initialize translation hook
 
   const openModal = () => {
     setVisible(true);
@@ -40,10 +44,9 @@ const LogoutModal = ({ navigation }) => {
   };
 
   const handleLogout = () => {
-    logout();
-    if (!token) {
-      navigation.navigate("login");
-    }
+    logout(navigation);
+   
+    
   };
 
   return (
@@ -52,9 +55,9 @@ const LogoutModal = ({ navigation }) => {
       <TouchableOpacity onPress={() => openModal()}>
         <LinearGradient
           colors={[
-            "rgba(255, 255, 255, 0.040)", // 0% opacity: Fully visible white
+            "rgba(255, 255, 255, 0.04)", // 0% opacity: Fully visible white (fixed syntax error in rgba)
             "rgba(255, 255, 255, 0.1)", // 77% opacity: 22% visible white
-            "rgba(255, 255, 255, 0))", // 100% opacity: Fully transparent white
+            "rgba(255, 255, 255, 0)", // 100% opacity: Fully transparent white (fixed syntax error in rgba)
           ]}
           start={{ x: 0, y: 0 }} // Starting point (top-left)
           end={{ x: 1, y: 0 }}
@@ -66,7 +69,7 @@ const LogoutModal = ({ navigation }) => {
             color="#D7D7D7"
             style={styles.icon}
           />
-          <Text style={styles.menuText}>Log Out</Text>
+          <Text style={styles.menuText}>{t("log_out")}</Text>
           <Ionicons name="chevron-forward" size={20} color="#D7D7D7" />
         </LinearGradient>
       </TouchableOpacity>
@@ -85,17 +88,17 @@ const LogoutModal = ({ navigation }) => {
             { transform: [{ translateY: slideAnim }] },
           ]}
         >
-          <Text style={styles.modalTitle}>Logout</Text>
-          <Text style={styles.modalText}>Are you sure want to log out ?</Text>
+          <Text style={styles.modalTitle}>{t("logout")}</Text>
+          <Text style={styles.modalText}>{t("confirm_logout")}</Text>
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.logoutButton}
               onPress={() => handleLogout()}
             >
-              <Text style={styles.logoutButtonText}>Logout</Text>
+              <Text style={styles.logoutButtonText}>{t("logout")}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -195,7 +198,7 @@ const styles = StyleSheet.create({
     elevation: 11,
     height: 55,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, .1)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   icon: {
     marginRight: 10,

@@ -17,27 +17,24 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import CircularButton from "../component/BackButton";
 import { LinearGradient } from "expo-linear-gradient";
 import LogoutModal from "./LogoutModal";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 const SettingsPage = ({ navigation }) => {
   const [isEnabled, setIsEnabled] = useState(false);
+  const { t } = useTranslation(); // Initialize translation hook
 
   const toggleSwitch = () => setIsEnabled((previousState) => !previousState);
 
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor: "#121212" }}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity>
             <CircularButton navigation={navigation} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Setting</Text>
-          <Switch
-            trackColor={{ false: "#767577", true: "#8E44AD" }}
-            thumbColor={isEnabled ? "#8E44AD" : "#8E44AD"}
-            onValueChange={toggleSwitch}
-            value={isEnabled}
-          />
+          <Text style={styles.headerTitle}>{t("settings")}</Text>
+          <View></View>
         </View>
 
         {/* Separator */}
@@ -49,9 +46,9 @@ const SettingsPage = ({ navigation }) => {
         >
           <LinearGradient
             colors={[
-              "rgba(255, 255, 255, 0.040)", // 0% opacity: Fully visible white
+              "rgba(255, 255, 255, 0.04)", // 0% opacity: Fully visible white (fixed syntax error in rgba)
               "rgba(255, 255, 255, 0.1)", // 77% opacity: 22% visible white
-              "rgba(255, 255, 255, 0))", // 100% opacity: Fully transparent white
+              "rgba(255, 255, 255, 0)", // 100% opacity: Fully transparent white (fixed syntax error in rgba)
             ]}
             start={{ x: 0, y: 0 }} // Starting point (top-left)
             end={{ x: 1, y: 0 }}
@@ -63,16 +60,16 @@ const SettingsPage = ({ navigation }) => {
               color="#D7D7D7"
               style={styles.icon}
             />
-            <Text style={styles.menuText}>Manage Subscription</Text>
+            <Text style={styles.menuText}>{t("manage_subscription")}</Text>
             <Ionicons name="chevron-forward" size={20} color="#D7D7D7" />
           </LinearGradient>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("FAQPage")}>
           <LinearGradient
             colors={[
-              "rgba(255, 255, 255, 0.040)", // 0% opacity: Fully visible white
+              "rgba(255, 255, 255, 0.04)", // 0% opacity: Fully visible white
               "rgba(255, 255, 255, 0.1)", // 77% opacity: 22% visible white
-              "rgba(255, 255, 255, 0))", // 100% opacity: Fully transparent white
+              "rgba(255, 255, 255, 0)", // 100% opacity: Fully transparent white
             ]}
             start={{ x: 0, y: 0 }} // Starting point (top-left)
             end={{ x: 1, y: 0 }}
@@ -84,16 +81,16 @@ const SettingsPage = ({ navigation }) => {
               color="#D7D7D7"
               style={styles.icon}
             />
-            <Text style={styles.menuText}>FAQ</Text>
+            <Text style={styles.menuText}>{t("faq")}</Text>
             <Ionicons name="chevron-forward" size={20} color="#D7D7D7" />
           </LinearGradient>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("helpsupport")}>
+        <TouchableOpacity onPress={() => navigation.navigate("HelpSupport")}>
           <LinearGradient
             colors={[
-              "rgba(255, 255, 255, 0.040)", // 0% opacity: Fully visible white
+              "rgba(255, 255, 255, 0.04)", // 0% opacity: Fully visible white
               "rgba(255, 255, 255, 0.1)", // 77% opacity: 22% visible white
-              "rgba(255, 255, 255, 0))", // 100% opacity: Fully transparent white
+              "rgba(255, 255, 255, 0)", // 100% opacity: Fully transparent white
             ]}
             start={{ x: 0, y: 0 }} // Starting point (top-left)
             end={{ x: 1, y: 0 }}
@@ -105,7 +102,7 @@ const SettingsPage = ({ navigation }) => {
               color="#D7D7D7"
               style={styles.icon}
             />
-            <Text style={styles.menuText}>Help & Support</Text>
+            <Text style={styles.menuText}>{t("help_support")}</Text>
             <Ionicons name="chevron-forward" size={20} color="#D7D7D7" />
           </LinearGradient>
         </TouchableOpacity>
@@ -114,9 +111,9 @@ const SettingsPage = ({ navigation }) => {
         >
           <LinearGradient
             colors={[
-              "rgba(255, 255, 255, 0.040)", // 0% opacity: Fully visible white
+              "rgba(255, 255, 255, 0.04)", // 0% opacity: Fully visible white
               "rgba(255, 255, 255, 0.1)", // 77% opacity: 22% visible white
-              "rgba(255, 255, 255, 0))", // 100% opacity: Fully transparent white
+              "rgba(255, 255, 255, 0)", // 100% opacity: Fully transparent white
             ]}
             start={{ x: 0, y: 0 }} // Starting point (top-left)
             end={{ x: 1, y: 0 }}
@@ -128,7 +125,7 @@ const SettingsPage = ({ navigation }) => {
               color="#D7D7D7"
               style={styles.icon}
             />
-            <Text style={styles.menuText}>Terms & Conditions</Text>
+            <Text style={styles.menuText}>{t("terms_conditions")}</Text>
             <Ionicons name="chevron-forward" size={20} color="#D7D7D7" />
           </LinearGradient>
         </TouchableOpacity>
@@ -179,7 +176,7 @@ const styles = StyleSheet.create({
     elevation: 11,
     height: 55,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, .1)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   icon: {
     marginRight: 10,

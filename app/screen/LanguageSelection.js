@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import axiosInstance from "./component/axiosInstance";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from "react-i18next";
 
 const languages = [
   {
@@ -57,19 +59,22 @@ const languages = [
 
 export default function LanguageSelection({ navigation }) {
   const [selectedLanguage, setSelectedLanguage] = useState(null);
+  const {i18n} = useTranslation()
   const updateProfile = async (language) => {
     try {
       const response = await axiosInstance.put("/user/profile", {
         language,
       });
       if (response.status === 200) {
+        await AsyncStorage.setItem("selectedLanguage", language);
+        await i18n.changeLanguage(language); // Update the app's language
         navigation.navigate("expertiselevel");
       }
     } catch (error) {
       console.log("Error updating profile:", error);
     }
   };
-
+  
   const renderItem = ({ item }) => {
     const isSelected = selectedLanguage === item.id;
     return (

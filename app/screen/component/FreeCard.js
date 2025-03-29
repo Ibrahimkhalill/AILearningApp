@@ -2,8 +2,11 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 export default function FreeCard() {
+  const { t } = useTranslation(); // Initialize translation hook
+
   return (
     <LinearGradient
       colors={["rgba(142, 68, 173, 1)", "rgba(74, 144, 226, 0.42)"]} // Gradient colors
@@ -12,14 +15,14 @@ export default function FreeCard() {
       style={styles.card}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Start learning for free</Text>
+        <Text style={styles.title}>{t("free_card_title")}</Text>
       </View>
       <View style={styles.features}>
         {[
-          "Basic progress tracking",
-          "Immersive scenario",
-          "Basic translation",
-          "Text conversation",
+          t("basic_progress_tracking"),
+          t("immersive_scenario"),
+          t("basic_translation"),
+          t("text_conversation"),
         ].map((feature, index) => (
           <View key={index} style={styles.featureItem}>
             <Ionicons name="checkmark-circle" size={20} color="#00FF00" />

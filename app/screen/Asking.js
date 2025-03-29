@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Octicons from "@expo/vector-icons/Octicons";
 export default function Asking({ navigation }) {
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1 , backgroundColor:"#121212" }}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>

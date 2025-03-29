@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 export default function CustomNavigationBar({ navigation }) {
   const [selectedTab, setSelectedTab] = useState("Home");
+  const { t } = useTranslation(); // Initialize translation hook
 
   const tabs = [
-    { label: "Home", icon: "home-outline", url: "dashborad" },
-    { label: "Chat", icon: "chatbubble-outline", url: "ChatHome" },
-    { label: "Voice", icon: "mic-outline", url: "VoiceChat" },
-    { label: "Profile", icon: "person-outline", url: "profile" },
+    { label: "home", icon: "home-outline", url: "dashboard" }, // Changed to lowercase for translation consistency
+    { label: "chat", icon: "chatbubble-outline", url: "ChatHome" },
+    { label: "voice", icon: "mic-outline", url: "VoiceChat" },
+    { label: "profile", icon: "person-outline", url: "profile" },
   ];
 
   return (
@@ -34,7 +36,7 @@ export default function CustomNavigationBar({ navigation }) {
               { color: selectedTab === tab.label ? "#FFFFFF" : "#D3D3D3" },
             ]}
           >
-            {tab.label}
+            {t(tab.label)} {/* Use translation for the label */}
           </Text>
         </TouchableOpacity>
       ))}

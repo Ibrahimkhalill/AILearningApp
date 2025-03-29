@@ -15,8 +15,8 @@ const languages = [
   { code: "es", name: "Spanish" },
   { code: "fr", name: "French" },
   { code: "de", name: "German" },
-  { code: "it", name: "Italian" },
-  { code: "bn", name: "Bengali" },
+  { code: "ar", name: "Arabic" },
+  { code: "zh-CN", name: "Chinese Mandarin" },
 ];
 
 const LanguageDropdown = ({ handleChangeLanguage }) => {

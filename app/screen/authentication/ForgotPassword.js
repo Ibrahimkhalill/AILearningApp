@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   ToastAndroid,
   Platform,
+  Alert,
 } from "react-native";
 import CircularButton from "../component/BackButton";
 import {
@@ -19,10 +20,13 @@ import {
 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import axiosInstance from "../component/axiosInstance";
+import { useTranslation } from "react-i18next"; // Import useTranslation
+
 const ForgotPassword = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useTranslation(); // Initialize translation hook
 
   function notifyMessage(msg) {
     if (Platform.OS === "android") {
@@ -34,7 +38,7 @@ const ForgotPassword = ({ navigation }) => {
         160
       );
     } else {
-      Alert.alert("Warning!", msg);
+      Alert.alert(t("warning"), msg);
     }
   }
 
@@ -45,12 +49,12 @@ const ForgotPassword = ({ navigation }) => {
 
   const handleForgotPassword = async () => {
     if (email.trim() === "") {
-      setError("Email field cannot be empty");
+      setError(t("email_empty"));
       return;
     }
 
     if (!validateEmail(email)) {
-      setError("Please enter a valid email address");
+      setError(t("invalid_email"));
       return;
     }
 
@@ -63,24 +67,23 @@ const ForgotPassword = ({ navigation }) => {
       });
 
       if (response.status === 200) {
-        notifyMessage("OTP sent successfully. Please check your email.");
+        notifyMessage(t("otp_sent_successfully"));
         navigation.navigate("OTPVerificationScreen", {
           email: email,
-
-          // Add other data you want to send
         }); // Navigate to the OTP verification screen
       } else {
-        notifyMessage(response.data.message || "Failed to send OTP.");
+        notifyMessage(response.data.message || t("failed_send_otp"));
       }
     } catch (error) {
       console.log("response", error);
       notifyMessage(
-        "Error: " + (error.response?.data?.message || error.message)
+        t("error") + ": " + (error.response?.data?.message || error.message)
       );
     } finally {
       setIsLoading(false);
     }
   };
+
   const handleOnchange = (onText) => {
     setEmail(onText);
     setError("");
@@ -91,7 +94,7 @@ const ForgotPassword = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1 , backgroundColor:"#121212" }}>
       <View style={styles.container}>
         <View style={styles.backButton}>
           {/* Add back button logic */}
@@ -106,14 +109,11 @@ const ForgotPassword = ({ navigation }) => {
           />
         </View>
 
-        <Text style={styles.title}>Forgot Password?</Text>
-        <Text style={styles.subtitle}>
-          Don't worry! It occurs. Please enter the email address linked with
-          your account.
-        </Text>
+        <Text style={styles.title}>{t("forgot_password_title")}</Text>
+        <Text style={styles.subtitle}>{t("forgot_password_subtitle")}</Text>
 
         <View>
-          <Text className="text-[#A4A4A4] mb-2">Email Address</Text>
+          <Text className="text-[#A4A4A4] mb-2">{t("email_address")}</Text>
           <View style={styles.inputWrapper}>
             <MaterialCommunityIcons
               name="email-outline"
@@ -122,7 +122,7 @@ const ForgotPassword = ({ navigation }) => {
             />
             <TextInput
               style={styles.input}
-              placeholder="Email Address"
+              placeholder={t("email_placeholder")}
               placeholderTextColor="#888"
               onChangeText={handleOnchange}
               value={email}
@@ -142,16 +142,11 @@ const ForgotPassword = ({ navigation }) => {
             {isLoading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.sendButtonText}>SEND</Text>
+              <Text style={styles.sendButtonText}>{t("send")}</Text>
             )}
           </LinearGradient>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleLogin}>
-          <Text style={styles.loginText}>
-            Remember Password? <Text style={styles.loginLink}>Login</Text>
-          </Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -160,7 +155,7 @@ const ForgotPassword = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: "#121212",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 50,
@@ -176,7 +171,6 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "flex-start",
   },
-
   backButtonText: {
     color: "#FFF",
     fontSize: 20,
@@ -218,12 +212,11 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 55,
   },
-
   input: {
     flex: 1,
     color: "#FFFFFF",
-
     fontSize: 14,
+    paddingLeft: 5
   },
   gradientButton: {
     paddingVertical: 15,

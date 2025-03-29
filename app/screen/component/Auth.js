@@ -30,42 +30,47 @@ const AuthProvider = ({ children }) => {
     language,
     navigation
   ) => {
+    setToken(access_token);
+    setLoggedIn(true);
     await AsyncStorage.setItem("username", username);
     await AsyncStorage.setItem("token", access_token);
     await AsyncStorage.setItem("refresh_token", refresh_token);
     await AsyncStorage.setItem("userId", user_id);
-    await AsyncStorage.setItem("language", language);
+    if (language) {
+      
+      await AsyncStorage.setItem("language", language);
+    }
+    
+
+    if (language) {
+      console.log("Navigating to dashboard");
+      navigation.navigate("dashboard");
+    } else {
+      console.log("Navigating to language page");
+      navigation.navigate("language");
+    }
 
     console.log("language", language);
 
-    setLoggedIn(true);
-    setToken(access_token);
+   
+
 
     // ✅ Fix: Use access_token directly instead of checking `token`
-    if (access_token) {
-      if (language) {
-        console.log("jjdk");
-
-        navigation.replace("dashboard"); // ✅ Use `replace` to avoid going back
-      } else {
-        console.log("login");
-
-        navigation.replace("language");
-      }
-    }
+    
   };
 
   // ✅ Logout User & Remove Tokens
-  const logout = async () => {
+  const logout = async (navigation) => {
+    setLoggedIn(false);
+    setToken(null);
+    navigation.navigate("login");
     await AsyncStorage.removeItem("username");
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("refresh_token");
     await AsyncStorage.removeItem("userId");
-    await AsyncStorage.removeItem("language");
     await AsyncStorage.removeItem("learningTime");
-
-    setLoggedIn(false);
-    setToken(null);
+    console.log("logout");
+    
   };
 
   return (

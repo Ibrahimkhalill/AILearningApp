@@ -1,32 +1,30 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 export default function PasswordChanged({ navigation }) {
+  const { t } = useTranslation(); // Initialize translation hook
+
   return (
     <View style={styles.container}>
       {/* Success Icon */}
       <View style={styles.iconContainer}>
-        <Image
-          source={require("../../assets/Sticker.png")}
-          resizeMode="contain"
-        />
+        <Image source={require("../../assets/Sticker.png")} resizeMode="contain" />
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Password Changed!</Text>
+      <Text style={styles.title}>{t("password_changed_title")}</Text>
 
       {/* Subtitle */}
-      <Text style={styles.subtitle}>
-        Your password has been changed successfully.
-      </Text>
+      <Text style={styles.subtitle}>{t("password_changed_success")}</Text>
 
       {/* Back to Login Button */}
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("login")} // Replace "Login" with your actual login screen name
+        onPress={() => navigation.navigate("login")}
       >
-        <Text style={styles.buttonText}>BACK TO LOGIN</Text>
+        <Text style={styles.buttonText}>{t("back_to_login")}</Text>
       </TouchableOpacity>
     </View>
   );

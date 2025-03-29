@@ -18,17 +18,22 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as Clipboard from "expo-clipboard";
 import CircularButton from "../component/BackButton";
 import { useAuth } from "../component/Auth";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 function SignupOtpVerification({ route, navigation }) {
   const { formData } = route.params || {};
-  const [SignupOtpVerificationFields, setSignupOtpVerificationFields] =
-    useState(["", "", "", ""]);
+  const [SignupOtpVerificationFields, setSignupOtpVerificationFields] = useState([
+    "",
+    "",
+    "",
+    "",
+  ]);
   const [isOtpFilled, setIsOtpFilled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(120);
   const inputRefs = useRef([]);
-
-  const { login, token } = useAuth();
+  const { login } = useAuth();
+  const { t } = useTranslation(); // Initialize translation hook
 
   useEffect(() => {
     if (timeLeft === 0) return;
@@ -50,7 +55,7 @@ function SignupOtpVerification({ route, navigation }) {
         160
       );
     } else {
-      Alert.alert("Warning!", msg);
+      Alert.alert(t("warning"), msg);
     }
   };
 
@@ -62,9 +67,10 @@ function SignupOtpVerification({ route, navigation }) {
         password: formData.password,
       });
       console.log("response.data", response.data);
+
       if (response.status === 201) {
-        console.log("response", response.data);
-        login(
+        // Wait for the login function to complete
+       login(
           formData.email,
           response.data.accessToken,
           response.data.refreshToken,
@@ -72,16 +78,18 @@ function SignupOtpVerification({ route, navigation }) {
           response.data?.user.language,
           navigation
         );
+        
+        
       }
     } catch (error) {
       console.log("Error: " + error.message);
+      notifyMessage(t("error") + ": " + error.message);
     }
   };
 
   const handleVerifyOTP = async () => {
-    console.log("call api 1");
     if (SignupOtpVerificationFields.some((field) => field === "")) {
-      notifyMessage("Please enter all OTP fields.");
+      notifyMessage(t("enter_all_otp_fields"));
       return;
     }
     if (timeLeft === 0) {
@@ -89,14 +97,12 @@ function SignupOtpVerification({ route, navigation }) {
         inputRefs.current[0].focus();
       }
       setSignupOtpVerificationFields(["", "", "", ""]);
-      notifyMessage("Otp time is experid. Please resend otp!");
+      notifyMessage(t("otp_expired_resend"));
       return;
     }
-    console.log("call api 2");
 
     const otp = SignupOtpVerificationFields.join("");
     setIsLoading(true);
-    console.log("call api 3");
     try {
       const response = await axiosInstance.post(`/auth/verify-otp`, {
         otp: otp,
@@ -104,35 +110,29 @@ function SignupOtpVerification({ route, navigation }) {
       });
       if (response.status === 200) {
         handleSignup();
-        notifyMessage("OTP Verified Successfully!");
+        notifyMessage(t("otp_verified_successfully"));
       } else {
-        notifyMessage("Invalid OTP, please try again.");
+        notifyMessage(t("invalid_otp_try_again"));
       }
     } catch (error) {
       if (error.response) {
-        // If the server returned a response (e.g., 400 status)
-        const errorMessage = error.response.data.error || "Invalid request"; // Adjust based on your API structure
-        console.log("Server error:", error.response);
-
-        // Display the error message in a toast or alert
-        notifyMessage(errorMessage); // Replace with your UI feedback mechanism
-
-        // Optionally set it in state to display in the UI
+        const errorMessage = error.response.data.message || t("invalid_request");
+        console.log("Server error:", error.response.data.message);
+        notifyMessage(errorMessage);
       } else {
-        // Handle other types of errors (e.g., network issues)
         console.log("Error without response:", error.message);
+        notifyMessage(t("network_error"));
       }
     } finally {
       setIsLoading(false);
     }
   };
+
   const handleOtpChange = (value, index) => {
     const updatedOtpFields = [...SignupOtpVerificationFields];
-    console.log(value);
 
     if (value.length > 1) {
-      // Handle paste (multi-character input)
-      const pastedValues = value.slice(0, updatedOtpFields.length).split(""); // Split pasted input
+      const pastedValues = value.slice(0, updatedOtpFields.length).split("");
       pastedValues.forEach((char, idx) => {
         if (index + idx < updatedOtpFields.length) {
           updatedOtpFields[index + idx] = char;
@@ -140,20 +140,18 @@ function SignupOtpVerification({ route, navigation }) {
       });
       setSignupOtpVerificationFields(updatedOtpFields);
 
-      // Move focus to the last filled field
       const lastIndex = index + pastedValues.length - 1;
       if (lastIndex < inputRefs.current.length) {
         inputRefs.current[lastIndex]?.focus();
       } else {
-        inputRefs.current[inputRefs.current.length - 1]?.blur(); // Blur last field
+        inputRefs.current[inputRefs.current.length - 1]?.blur();
       }
     } else {
-      // Handle single-character input
       updatedOtpFields[index] = value;
       setSignupOtpVerificationFields(updatedOtpFields);
 
       if (value && index < inputRefs.current.length - 1) {
-        inputRefs.current[index + 1]?.focus(); // Move focus to the next field
+        inputRefs.current[index + 1]?.focus();
       }
     }
   };
@@ -170,14 +168,15 @@ function SignupOtpVerification({ route, navigation }) {
 
       if (response.status === 200) {
         setTimeLeft(120);
-        notifyMessage("Otp has been resent.");
+        notifyMessage(t("otp_resent"));
       }
     } catch (error) {
       console.log("error", error);
+      notifyMessage(t("error") + ": " + error.message);
     }
   };
+
   useEffect(() => {
-    // Focus on the first input field when the component mounts
     if (inputRefs.current[0]) {
       inputRefs.current[0].focus();
     }
@@ -197,13 +196,10 @@ function SignupOtpVerification({ route, navigation }) {
   useEffect(() => {
     const checkClipboard = async () => {
       const clipboardContent = await Clipboard.getStringAsync();
-      if (
-        clipboardContent !== lastClipboardContent &&
-        /^\d{4}$/.test(clipboardContent)
-      ) {
+      if (clipboardContent !== lastClipboardContent && /^\d{4}$/.test(clipboardContent)) {
         const otpArray = clipboardContent.split("");
         setSignupOtpVerificationFields(otpArray);
-        setLastClipboardContent(clipboardContent); // নতুন কন্টেন্ট সেভ করুন
+        setLastClipboardContent(clipboardContent);
         await Clipboard.setStringAsync("");
         const lastInputIndex = inputRefs.current.length - 1;
         inputRefs.current[lastInputIndex]?.focus();
@@ -213,30 +209,28 @@ function SignupOtpVerification({ route, navigation }) {
       checkClipboard();
     }, 1000);
 
-    return () => clearInterval(interval); // Cleanup interval
+    return () => clearInterval(interval);
   }, [lastClipboardContent]);
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View className="py-16 items-center bg-[#000] w-full px-5 h-full">
         <View style={styles.backButton}>
-          {/* Add back button logic */}
           <CircularButton navigation={navigation} />
         </View>
 
-        {/* Replace with the globe image from your assets */}
         <View style={styles.iconWrapper}>
           <Image
-            source={require("../../assets/main_logo.png")} // Replace with your image
+            source={require("../../assets/main_logo.png")}
             style={styles.icon}
           />
         </View>
         <View className="py-3 w-[80%]">
           <Text className="text-[27px] text-center font-semibold text-white">
-            OTP Verification
+            {t("otp_verification")}
           </Text>
           <Text className="text-[14px] mt-5 font-semibold text-center text-gray-500">
-            Enter the verification code we just sent on your email address.
+            {t("enter_verification_code_email")}
           </Text>
         </View>
         <View className="my-5 rounded-lg w-full flex items-center">
@@ -256,7 +250,7 @@ function SignupOtpVerification({ route, navigation }) {
                     index > 0
                   ) {
                     const updatedOtp = [...SignupOtpVerificationFields];
-                    updatedOtp[index - 1] = ""; // Clear previous input
+                    updatedOtp[index - 1] = "";
                     setSignupOtpVerificationFields(updatedOtp);
                     inputRefs.current[index - 1]?.focus();
                   }
@@ -273,7 +267,7 @@ function SignupOtpVerification({ route, navigation }) {
               <ActivityIndicator size="small" color="#0000ff" />
             ) : (
               <Text className="text-center text-white text-[18px]">
-                Verify OTP
+                {t("verify_otp")}
               </Text>
             )}
           </TouchableOpacity>
@@ -293,7 +287,7 @@ function SignupOtpVerification({ route, navigation }) {
                   timeLeft > 0 ? "opacity-50" : ""
                 }`}
               >
-                Resend OTP
+                {t("resend_otp")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -315,7 +309,6 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "flex-start",
   },
-
   backButtonText: {
     color: "#FFF",
     fontSize: 20,
@@ -357,11 +350,9 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 55,
   },
-
   input: {
     flex: 1,
     color: "#FFFFFF",
-
     fontSize: 14,
   },
   gradientButton: {

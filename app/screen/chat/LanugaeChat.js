@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react"; // ✅ Fixed import
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   FlatList,
   StyleSheet,
@@ -17,28 +16,42 @@ import axios from "axios";
 import RenderHtml from "react-native-render-html";
 import LanguageDropdown from "../component/LanguageDropdown";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axiosInstance from "../component/axiosInstance";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 const LanguageChat = ({ navigation }) => {
   const [messages, setMessages] = useState([]);
   const [lang, setLang] = useState("en");
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation(); // Initialize translation hook
 
   const htmlToPlainText = (html) => {
     return html.replace(/<\/?[^>]+(>|$)/g, "");
   };
 
   const handleSpeech = (text) => {
-    console.log("text", text);
-
     if (!text) return;
     const plainText = htmlToPlainText(text);
-    console.log("plainText", plainText);
 
     Speech.speak(plainText, {
       language: lang,
       pitch: 1.1,
       rate: 1.0,
     });
+  };
+
+  const fetchProfile = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get("/user/profile");
+      const { language } = response.data.user;
+      setLang(language);
+      console.log(response.data);
+    } catch (error) {
+      console.log("Error fetching profile:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchData = async () => {
@@ -83,6 +96,7 @@ const LanguageChat = ({ navigation }) => {
 
   useEffect(() => {
     try {
+      fetchProfile();
       fetchData();
     } catch (error) {
       console.error("useEffect Error:", error);
@@ -116,7 +130,7 @@ const LanguageChat = ({ navigation }) => {
         <FontAwesome
           name="file-audio-o"
           size={18}
-          color={"#0C41FE"}
+          color="#0C41FE"
           onPress={() => handleSpeech(item.text)}
         />
       )}
@@ -132,7 +146,7 @@ const LanguageChat = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor: "#121212" }}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity>

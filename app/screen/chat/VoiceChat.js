@@ -21,6 +21,7 @@ import * as Speech from "expo-speech";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axiosInstance from "../component/axiosInstance";
 import CustomAlert from "../component/CustomAlert";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 import { useLearningTime } from "../component/LearningTimeContext";
 
 const VoiceChat = ({ navigation }) => {
@@ -37,6 +38,8 @@ const VoiceChat = ({ navigation }) => {
   const [alertMessage, setAlertMessage] = useState("");
   const [plan, setPlan] = useState("");
   const { updateLearningTime } = useLearningTime();
+  const { t } = useTranslation(); // Initialize translation hook
+
   // ✅ Function to Start/Stop Speech
   const handleSpeech = (text) => {
     if (!text) return;
@@ -62,6 +65,7 @@ const VoiceChat = ({ navigation }) => {
       setBotSpeaking(true);
     }
   };
+
   const fetchProfile = async () => {
     try {
       const response = await axiosInstance.get("/subscription/details");
@@ -73,26 +77,38 @@ const VoiceChat = ({ navigation }) => {
       console.error("Error fetching subscriptions:", error);
     }
   };
+
   useEffect(() => {
     fetchProfile();
   }, []);
+
   // ✅ Start Recording
   const startRecording = async () => {
     try {
+      // 🎤 Microphone permission check
       const permission = await Audio.requestPermissionsAsync();
       if (permission.status !== "granted") {
-        alert("Microphone access is required!");
+        Alert.alert(t("microphone_access_required")); // Translated alert
         return;
       }
 
+      // 🔊 Set recording mode for iOS
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
       setAudioResponse(null);
       console.log("Starting recording...");
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
-      );
+
+      const recording = new Audio.Recording();
+      await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+      await recording.startAsync();
+
       setIsRecording(true);
       setIsSpeaking(true);
       setRecording(recording);
+
       console.log("Recording started.");
     } catch (error) {
       console.error("Failed to start recording:", error);
@@ -109,8 +125,6 @@ const VoiceChat = ({ navigation }) => {
       const uri = recording.getURI();
       console.log("Recording saved at", uri);
 
-      // Convert and Send
-
       await sendAudioToBackend(uri);
     } catch (error) {
       console.error("Failed to stop recording:", error);
@@ -125,7 +139,7 @@ const VoiceChat = ({ navigation }) => {
       const fileInfo = await FileSystem.getInfoAsync(uri);
       if (!fileInfo.exists) {
         console.error("File does not exist at URI:", uri);
-        alert("File not found!");
+        Alert.alert(t("file_not_found")); // Translated alert
         return;
       }
 
@@ -144,7 +158,7 @@ const VoiceChat = ({ navigation }) => {
       console.log("Sending audio & language to backend...", uri, plan, userId);
 
       const response = await axios.post(
-        "https://advanced-oarfish-slightly.ngrok-free.app/process_audio/",
+        "http://24.144.85.64/fast/api/process_audio/",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -265,16 +279,18 @@ const VoiceChat = ({ navigation }) => {
       console.error("Error saving time:", error);
     }
   };
+  console.log("audioResponse", audioResponse);
+
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor: "#121212" }}>
       <ScrollView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity>
             <CircularButton navigation={navigation} />
           </TouchableOpacity>
           <View style={{ flexDirection: "row" }}>
-            <Text style={styles.headerTitle}>Speaking To</Text>
-            <Text style={styles.headerTitle1}>AI BOT</Text>
+            <Text style={styles.headerTitle}>{t("speaking_to")}</Text>
+            <Text style={styles.headerTitle1}>{t("ai_bot")}</Text>
           </View>
           {plan === "Free" ? (
             <TouchableOpacity>
@@ -307,10 +323,10 @@ const VoiceChat = ({ navigation }) => {
                 colors={["rgba(142, 68, 173, 0.2)", "rgba(142, 68, 173, 0.2)"]}
                 style={styles.controlsTextBOX}
               >
-                <Text className="text-white">{audioResponse}</Text>
+                <Text style={{ color: "white" }}>{audioResponse}</Text>
               </LinearGradient>
             ) : (
-              "Hold the button below to record your voice"
+              t("hold_button_to_record")
             )}
           </Text>
           {!botSpeaking && (
@@ -446,13 +462,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderRadius: 55,
-    opacity: 20,
+    opacity: 0.2,
   },
   controlsTextBOX: {
     flexDirection: "row",
-    justifyContent: "space-between",
     padding: 10,
-    width: "90%",
+    width: "100%",
     marginTop: 20,
     height: 200,
     borderRadius: 12,

@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -10,6 +18,8 @@ import GradientText from "../component/GradientText";
 import axiosInstance from "../component/axiosInstance";
 import axios from "axios";
 import { useAuth } from "../component/Auth";
+import { WebView } from "react-native-webview";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 const ManageSubscription = ({ navigation }) => {
   const [startDate, setStartDate] = useState("");
@@ -20,6 +30,9 @@ const ManageSubscription = ({ navigation }) => {
   const [updating, setUpdating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const { token, refreshAccessToken } = useAuth();
+  const [checkoutUrl, setCheckoutUrl] = useState(null); // Store the checkout URL
+  const { t } = useTranslation(); // Initialize translation hook
+
   // ✅ Fetch User Profile from Backend API
   const fetchProfile = async () => {
     setLoading(true);
@@ -32,15 +45,17 @@ const ManageSubscription = ({ navigation }) => {
       setStartDate(startDate);
       setEndDate(endDate);
       setPlan(type);
+      console.log("fdf", response.data);
     } catch (error) {
       console.error("Error fetching subscriptions:", error);
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchProfile();
-  });
+  }, []);
 
   const formatDate = (dateString) => {
     if (!dateString) return ""; // Handle empty case
@@ -51,14 +66,57 @@ const ManageSubscription = ({ navigation }) => {
       year: "numeric",
     }).format(date);
   };
+
+  const createCheckoutSession = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.post(
+        "/subscription/stripe-session", // Your backend endpoint
+        {} // Replace with the actual price ID
+      );
+      setCheckoutUrl(response.data.url); // Save the checkout URL
+    } catch (error) {
+      Alert.alert(t("error"), t("failed_create_checkout_session"));
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNavigationStateChange = (navState) => {
+    if (navState.url.includes("/api/subscription/stripe-success")) {
+      setCheckoutUrl(null); // Close the WebView
+      fetchProfile();
+      Alert.alert(t("success"), t("subscription_successful"));
+    } else if (navState.url.includes("/api/subscription/stripe-cancel")) {
+      setCheckoutUrl(null); // Close the WebView
+    }
+  };
+
+  if (checkoutUrl) {
+    // Render the WebView if a checkout URL is available
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <WebView
+          source={{ uri: checkoutUrl }}
+          onNavigationStateChange={handleNavigationStateChange}
+          startInLoadingState
+          renderLoading={() => (
+            <ActivityIndicator size="large" color="#FFDC58" />
+          )}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor: "#121212" }}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <CircularButton navigation={navigation} />
 
-          <Text style={styles.headerTitle}>Manage Subscription</Text>
+          <Text style={styles.headerTitle}>{t("manage_subscription")}</Text>
 
           <Setting navigation={navigation} />
         </View>
@@ -69,75 +127,74 @@ const ManageSubscription = ({ navigation }) => {
             source={require("../../assets/main_logo.png")} // Replace with your logo URL
             style={styles.logo}
           />
-          {/* <Text style={styles.logoText}>LangSwap</Text> */}
-          <GradientText text={"LangSwap"} />
+          <GradientText text={t("lang_swap")} />
         </View>
 
         {/* Subscription Details */}
         <View style={styles.detailContainer}>
           <LinearGradient
             colors={[
-              "rgba(255, 255, 255, 0.040)", // 0% opacity: Fully visible white
+              "rgba(255, 255, 255, 0.04)", // 0% opacity: Fully visible white (fixed syntax error in rgba)
               "rgba(255, 255, 255, 0.1)", // 77% opacity: 22% visible white
-              "rgba(255, 255, 255, 0))", // 100% opacity: Fully transparent white
+              "rgba(255, 255, 255, 0)", // 100% opacity: Fully transparent white (fixed syntax error in rgba)
             ]}
             start={{ x: 0, y: 0 }} // Starting point (top-left)
             end={{ x: 1, y: 0 }}
             style={styles.detailItem}
           >
-            <Text style={styles.label}>Amount</Text>
-            <Text style={styles.value}>12$</Text>
+            <Text style={styles.label}>{t("amount")}</Text>
+            <Text style={styles.value}>{t("subscription_amount")}</Text>
           </LinearGradient>
           <LinearGradient
             colors={[
-              "rgba(255, 255, 255, 0.040)", // 0% opacity: Fully visible white
+              "rgba(255, 255, 255, 0.04)", // 0% opacity: Fully visible white
               "rgba(255, 255, 255, 0.1)", // 77% opacity: 22% visible white
-              "rgba(255, 255, 255, 0))", // 100% opacity: Fully transparent white
+              "rgba(255, 255, 255, 0)", // 100% opacity: Fully transparent white
             ]}
             start={{ x: 0, y: 0 }} // Starting point (top-left)
             end={{ x: 1, y: 0 }}
             style={styles.detailItem}
           >
-            <Text style={styles.label}>Begins</Text>
+            <Text style={styles.label}>{t("begins")}</Text>
             <Text style={styles.value}>{formatDate(startDate)}</Text>
           </LinearGradient>
           <LinearGradient
             colors={[
-              "rgba(255, 255, 255, 0.040)", // 0% opacity: Fully visible white
+              "rgba(255, 255, 255, 0.04)", // 0% opacity: Fully visible white
               "rgba(255, 255, 255, 0.1)", // 77% opacity: 22% visible white
-              "rgba(255, 255, 255, 0))", // 100% opacity: Fully transparent white
+              "rgba(255, 255, 255, 0)", // 100% opacity: Fully transparent white
             ]}
             start={{ x: 0, y: 0 }} // Starting point (top-left)
             end={{ x: 1, y: 0 }}
             style={styles.detailItem}
           >
-            <Text style={styles.label}>Ends</Text>
+            <Text style={styles.label}>{t("ends")}</Text>
             <Text style={styles.value}>{formatDate(endDate)}</Text>
           </LinearGradient>
 
           <LinearGradient
             colors={[
-              "rgba(255, 255, 255, 0.040)", // 0% opacity: Fully visible white
+              "rgba(255, 255, 255, 0.04)", // 0% opacity: Fully visible white
               "rgba(255, 255, 255, 0.1)", // 77% opacity: 22% visible white
-              "rgba(255, 255, 255, 0))", // 100% opacity: Fully transparent white
+              "rgba(255, 255, 255, 0)", // 100% opacity: Fully transparent white
             ]}
             start={{ x: 0, y: 0 }} // Starting point (top-left)
             end={{ x: 1, y: 0 }}
             style={styles.detailItem}
           >
-            <Text style={styles.label}>Type</Text>
+            <Text style={styles.label}>{t("type")}</Text>
             <Text style={styles.value}>{plan}</Text>
           </LinearGradient>
         </View>
 
         {/* Buttons */}
-        {plan === "free" && (
+        {plan === "Free" && (
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.renewButton}>
-              <Text style={styles.renewButtonText}>Renew</Text>
+            <TouchableOpacity style={styles.renewButton} onPress={createCheckoutSession}>
+              <Text style={styles.renewButtonText}>{t("renew")}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -233,6 +290,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  safeArea: {
+    flexGrow: 1,
+    paddingBottom: 10,
+    backgroundColor: "white",
   },
 });
 

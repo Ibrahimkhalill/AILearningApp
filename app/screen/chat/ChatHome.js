@@ -1,4 +1,4 @@
-import React, { use, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react"; // Fixed typo: 'use' to 'useEffect'
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import * as Speech from "expo-speech";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axiosInstance from "../component/axiosInstance";
 import CustomAlert from "../component/CustomAlert";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 import { useLearningTime } from "../component/LearningTimeContext";
 
 const ChatHome = ({ navigation }) => {
@@ -33,25 +34,34 @@ const ChatHome = ({ navigation }) => {
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const { updateLearningTime } = useLearningTime();
+  const flatListRef = useRef(null);
+  const { t } = useTranslation(); // Initialize translation hook
+
   const handleSend = async () => {
     if (!inputText.trim() || loading) return;
     const userId = await AsyncStorage.getItem("userId");
-    // Add user message to state
+
     const newMessage = {
       id: Date.now().toString(),
       original_text: inputText,
       sender: "user",
     };
-    setInputText(""); // Clear input only after response
+
+    setInputText("");
     setMessages((prevMessages) => [...prevMessages, newMessage]);
 
-    setLoading(true); // Start loading
-    setTyping(true); // Start typing animation
-    console.log(newMessage.original_text, lang, userId, plan, level);
+    // Scroll to bottom after new message
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
 
-    try {
+    setLoading(true);
+    setTyping(true);
+    console.log("hi", lang,userId,plan,level);
+    
+      try {
       const response = await axios.post(
-        "https://advanced-oarfish-slightly.ngrok-free.app/correct_grammar/",
+        "http://24.144.85.64/fast/api/correct_grammar/",
         {
           text: newMessage.original_text,
           language: lang,
@@ -63,16 +73,14 @@ const ChatHome = ({ navigation }) => {
 
       if (response.status === 200) {
         fetchData();
-        console.log("response", response.data);
       } else {
-        alert("No correction received. Please try again.");
+        Alert.alert(t("no_correction_alert"), t("try_again")); // Translated alert
       }
     } catch (error) {
       console.error("Error:", error);
     } finally {
       setLoading(false);
-      setTyping(false); // Stop typing animation
-      setInputText(""); // Clear input only after response
+      setTyping(false);
     }
   };
 
@@ -81,21 +89,25 @@ const ChatHome = ({ navigation }) => {
     try {
       setLoading(true);
 
+      let response;
       if (plan === "Free") {
-        const response = await axios.get(
-          `https://advanced-oarfish-slightly.ngrok-free.app/get_messages_free/?user_id=${userId}`
+        response = await axios.get(
+          `http://24.144.85.64/fast/api/get_messages_free/?user_id=${userId}`
         );
-        setMessages(response.data);
-        console.log("response.data", response.data);
       } else {
-        const response = await axios.get(
-          `https://advanced-oarfish-slightly.ngrok-free.app/get_messages_text/?user_id=${userId}`
+        response = await axios.get(
+          `http://24.144.85.64/fast/api/get_messages_text/?user_id=${userId}`
         );
-        setMessages(response.data);
-        console.log("response.data", response.data);
       }
+
+      setMessages(response.data);
+
+      // Scroll to bottom after fetching messages
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     } catch (error) {
-      if (error.response.status === 400) {
+      if (error.response?.status === 400) {
         setAlertMessage(error.response.data.detail);
         setAlertVisible(true);
         return;
@@ -135,7 +147,7 @@ const ChatHome = ({ navigation }) => {
         source={require("../../assets/main_logo.png")}
         style={styles.userImage}
       />
-      <Text style={styles.typingText}>Bot is typing...</Text>
+      <Text style={styles.typingText}>{t("bot_typing")}</Text>
       <ActivityIndicator size="small" color="#4B98E5" />
     </View>
   );
@@ -145,11 +157,8 @@ const ChatHome = ({ navigation }) => {
   };
 
   const handleSpeech = (text) => {
-    console.log("text", text);
-
     if (!text) return;
     const plainText = htmlToPlainText(text);
-    console.log("plainText", plainText);
 
     Speech.speak(plainText, {
       language: lang,
@@ -179,8 +188,6 @@ const ChatHome = ({ navigation }) => {
             : styles.botMessageText
         }
       >
-        {/* {item.text} */}
-
         {item.text ? (
           <RenderHtml contentWidth={300} source={{ html: item.text }} />
         ) : (
@@ -191,7 +198,7 @@ const ChatHome = ({ navigation }) => {
         <FontAwesome
           name="file-audio-o"
           size={18}
-          color={"#0C41FE"}
+          color="#0C41FE"
           onPress={() => handleSpeech(item.text)}
         />
       )}
@@ -250,7 +257,7 @@ const ChatHome = ({ navigation }) => {
       }
       console.log("existingEntry", existingEntry);
 
-      updateLearningTime(existingEntry?.time);
+      updateLearningTime(existingEntry?.time || 0);
       await AsyncStorage.setItem("learningTime", JSON.stringify(storedData));
       console.log("Updated Learning Time:", storedData);
     } catch (error) {
@@ -259,15 +266,15 @@ const ChatHome = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor: "#121212" }}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity>
             <CircularButton navigation={navigation} />
           </TouchableOpacity>
           <View style={{ flexDirection: "row" }}>
-            <Text style={styles.headerTitle1}>Lang</Text>
-            <Text style={styles.headerTitle}>Swap</Text>
+            <Text style={styles.headerTitle1}>{t("language")}</Text>
+            <Text style={styles.headerTitle}>{t("swap")}</Text>
           </View>
           <TouchableOpacity>
             <Setting navigation={navigation} />
@@ -276,26 +283,28 @@ const ChatHome = ({ navigation }) => {
         {messages.length === 0 && (
           <View style={styles.indroduction}>
             <Text style={{ color: "white", fontSize: 30, textAlign: "center" }}>
-              What can I help with?
+              {t("what_can_i_help_with")}
             </Text>
           </View>
         )}
 
         <FlatList
+          ref={flatListRef} // Attach ref
           data={messages}
           renderItem={renderMessage}
           keyExtractor={(item) => item.id}
           style={styles.chatList}
           contentContainerStyle={styles.chatListContainer}
-          ListFooterComponent={
-            typing ? <TypingIndicator /> : null // Show typing indicator
-          }
+          ListFooterComponent={typing ? <TypingIndicator /> : null}
+          onContentSizeChange={() =>
+            flatListRef.current?.scrollToEnd({ animated: true })
+          } // Auto-scroll on content update
         />
 
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.textInput}
-            placeholder="Type message here..."
+            placeholder={t("type_message_here")}
             placeholderTextColor="#aaa"
             value={inputText}
             onChangeText={setInputText}
@@ -308,16 +317,14 @@ const ChatHome = ({ navigation }) => {
               style={styles.loadingIndicator}
             />
           ) : (
-            <>
-              <TouchableOpacity onPress={handleSend}>
-                <Ionicons
-                  name="send"
-                  size={22}
-                  color="#fff"
-                  style={styles.sendIcon}
-                />
-              </TouchableOpacity>
-            </>
+            <TouchableOpacity onPress={handleSend}>
+              <Ionicons
+                name="send"
+                size={22}
+                color="#fff"
+                style={styles.sendIcon}
+              />
+            </TouchableOpacity>
           )}
         </View>
       </View>
@@ -434,6 +441,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginLeft: 10,
     marginBottom: 16,
+    gap: 5,
   },
   typingText: {
     color: "#4B98E5",

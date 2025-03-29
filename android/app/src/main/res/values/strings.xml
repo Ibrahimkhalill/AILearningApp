@@ -1,0 +1,9 @@
+<resources>
+  <string name="app_name">ailearningapp</string>
+  <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
+  <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
+  <string name="expo_runtime_version">1.0.0</string>
+  <string name="facebook_app_id">579125941688038</string>
+  <string name="facebook_client_token">c69f0ebb7d9b3245958a87cf6bcf974e</string>
+  <string name="fb_login_protocol_scheme">fb579125941688038</string>
+</resources>

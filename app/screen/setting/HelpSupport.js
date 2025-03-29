@@ -8,6 +8,7 @@ import {
   Image,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,11 +16,13 @@ import CircularButton from "../component/BackButton";
 import Setting from "../component/Setting";
 import axiosInstance from "../component/axiosInstance";
 import { ScrollView } from "react-native";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 const HelpSupport = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [problem, setProblem] = useState("");
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation(); // Initialize translation hook
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -32,21 +35,23 @@ const HelpSupport = ({ navigation }) => {
       if (response.status === 200) {
         setEmail("");
         setProblem("");
-        Alert.alert("Success", "Messges send successfully!");
+        Alert.alert(t("success"), t("message_sent_successfully"));
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
+      Alert.alert(t("error"), t("failed_send_message"));
     } finally {
       setLoading(false);
     }
   };
+
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor: "#121212" }}>
       <ScrollView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <CircularButton navigation={navigation} />
-          <Text style={styles.headerTitle}>Help & Support</Text>
+          <Text style={styles.headerTitle}>{t("help_support")}</Text>
           <Setting navigation={navigation} />
         </View>
 
@@ -56,40 +61,33 @@ const HelpSupport = ({ navigation }) => {
             source={require("../../assets/main_logo.png")} // Replace with your logo URL
             style={styles.logo}
           />
-          <Text style={styles.infoText}>
-            At LangSwap, we are committed to providing you with seamless support
-            throughout your language learning journey. Whether you need
-            assistance with navigating the app, troubleshooting issues, or have
-            questions about our features, our team is here to help. We strive to
-            ensure that every learner receives the guidance they need to make
-            the most of our platform.
-          </Text>
+          <Text style={styles.infoText}>{t("langswap_support_description")}</Text>
         </View>
 
         {/* Form */}
         <View style={styles.formContainer}>
           {/* Email Field */}
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>{t("email")}</Text>
           <View style={styles.inputWrapper}>
             <Ionicons name="mail" size={20} color="#aaa" style={styles.icon} />
             <TextInput
               style={styles.input}
               value={email}
               onChangeText={setEmail}
-              placeholder="Enter your email"
+              placeholder={t("enter_email")}
               placeholderTextColor="#aaa"
               keyboardType="email-address"
             />
           </View>
 
           {/* Problem Field */}
-          <Text style={styles.label}>Explain The Problem</Text>
+          <Text style={styles.label}>{t("explain_problem")}</Text>
           <View style={styles.textAreaWrapper}>
             <TextInput
               style={styles.textArea}
               value={problem}
               onChangeText={setProblem}
-              placeholder="Describe your issue"
+              placeholder={t("describe_issue")}
               placeholderTextColor="#aaa"
               multiline
             />
@@ -97,8 +95,16 @@ const HelpSupport = ({ navigation }) => {
         </View>
 
         {/* Submit Button */}
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Submit</Text>
+        <TouchableOpacity
+          style={styles.submitButton}
+          onPress={handleSubmit}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.submitButtonText}>{t("submit")}</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -171,6 +177,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#A4A4A4",
     fontSize: 16,
+    height: 30,
   },
   textArea: {
     color: "#fff",

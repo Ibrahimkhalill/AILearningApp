@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,15 +7,16 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../component/Auth";
 import ErrorModal from "../component/ErrorModal";
 import axiosInstance from "../component/axiosInstance";
+import * as WebBrowser from "expo-web-browser";
+import LoadingOverlay from "../component/LoadingOverlay";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 export default function Login({ navigation }) {
   const [formData, setFormData] = useState({
@@ -28,6 +29,10 @@ export default function Login({ navigation }) {
   const [errorVisible, setErrorVisible] = useState(false);
   const { login, token } = useAuth();
   const [passwordVisible, setPasswordVisible] = useState(false); // For password visibility toggle
+  const { t } = useTranslation(); // Initialize translation hook
+
+  WebBrowser.maybeCompleteAuthSession();
+
   // Handle field changes and validations
   const handleTextChange = (field, value) => {
     setFormData((prevFormData) => ({
@@ -53,13 +58,13 @@ export default function Login({ navigation }) {
 
     // Validate fields
     if (!formData.email) {
-      formErrors.email = "Email Address is required.";
+      formErrors.email = t("email_required");
     } else if (!validateEmail(formData.email)) {
-      formErrors.email = "Invalid Email Address.";
+      formErrors.email = t("invalid_email");
     }
 
     if (!formData.password) {
-      formErrors.password = "Password is required.";
+      formErrors.password = t("password_required");
     }
 
     // If there are errors, display them
@@ -77,24 +82,17 @@ export default function Login({ navigation }) {
       });
 
       if (response.status === 200) {
-        console.log("response.data._id", response.data.user._id);
-
         login(
           formData.email,
           response.data.accessToken,
           response.data.refreshToken,
           response.data.user._id,
           response.data?.user?.language,
-          navigation
         );
-      } else {
-        setErrorVisible(true);
-        setError("Invalid email or password");
+        setIsLoading(false);
       }
     } catch (error) {
       if (error.response) {
-        console.log("Error without response:", error);
-        // If the server returned a response (e.g., 400 status)
         const serverErrors = error.response.data.message; // Adjust based on your API structure
         const formErrors = { email: "", password: "" };
 
@@ -102,19 +100,25 @@ export default function Login({ navigation }) {
         setErrorVisible(true);
         setError(serverErrors);
       } else {
-        // Handle other types of errors (e.g., network issues)
-        console.log("Error without response:", error.message);
         setErrorVisible(true);
-        setError("Network error. Please try again.");
+        setError(t("network_error"));
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  
+
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor:"#121212" }}>
       <View style={styles.container}>
+        {isLoading && (
+          <View style={styles.overlay}>
+            <LoadingOverlay loading={isLoading} />
+          </View>
+        )}
+
         <ScrollView
           contentContainerStyle={{ alignItems: "center" }}
           showsVerticalScrollIndicator={false}
@@ -129,15 +133,13 @@ export default function Login({ navigation }) {
           />
 
           {/* Header */}
-          <Text style={styles.header}>Welcome Back!</Text>
-          <Text style={styles.subHeader}>
-            Start learning your favorite language
-          </Text>
+          <Text style={styles.header}>{t("welcome_back")}</Text>
+          <Text style={styles.subHeader}>{t("start_learning_favorite_language")}</Text>
 
           {/* Input Fields */}
           <View style={styles.inputContainer}>
             {/* Email */}
-            <Text style={styles.label}>Email Address</Text>
+            <Text style={styles.label}>{t("email_address")}</Text>
             <View
               style={[
                 styles.inputWrapper,
@@ -151,18 +153,21 @@ export default function Login({ navigation }) {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Email Address"
+                placeholder={t("email_placeholder")}
                 placeholderTextColor="#888"
                 value={formData.email}
                 onChangeText={(value) => handleTextChange("email", value)}
+                autoCapitalize="none"
               />
               {errors.email && (
-                <Text style={styles.errorText}>{errors.email}</Text>
+                <Text style={[styles.errorText, { color: "red" }]}>
+                  {errors.email}
+                </Text>
               )}
             </View>
 
             {/* Password */}
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>{t("password")}</Text>
             <View
               style={[
                 styles.inputWrapper,
@@ -172,7 +177,7 @@ export default function Login({ navigation }) {
               <Ionicons name="lock-closed-outline" size={20} color="#888" />
               <TextInput
                 style={styles.input}
-                placeholder="*************"
+                placeholder={t("password_placeholder")}
                 secureTextEntry={!passwordVisible}
                 placeholderTextColor="#888"
                 value={formData.password}
@@ -188,7 +193,9 @@ export default function Login({ navigation }) {
                 />
               </TouchableOpacity>
               {errors.password && (
-                <Text style={styles.errorText}>{errors.password}</Text>
+                <Text style={[styles.errorText, { color: "red" }]}>
+                  {errors.password}
+                </Text>
               )}
             </View>
           </View>
@@ -198,7 +205,7 @@ export default function Login({ navigation }) {
             style={styles.checkboxContainer}
             onPress={() => navigation.navigate("ForgotPassword")}
           >
-            <Text style={styles.checkboxLabel}>Forgot Password?</Text>
+            <Text style={styles.checkboxLabel}>{t("forgot_password")}</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
@@ -212,19 +219,18 @@ export default function Login({ navigation }) {
               style={styles.gradientButton}
             >
               <Text style={styles.buttonText}>
-                {isLoading ? "Signing In..." : "SIGN IN"}
+                {isLoading ? t("signing_in") : t("sign_in")}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* Social Login */}
-          <Text style={styles.orText}>Or continue with</Text>
-          <View style={styles.socialButtons}>
-            <TouchableOpacity style={styles.socialButton}>
-              <Ionicons name="logo-google" size={30} color="#DB4437" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialButton}>
-              <FontAwesome5 name="facebook" size={30} color="#0A66C2" />
+         
+          <View style={{ flexDirection: "row", justifyContent: "center", paddingVertical: 10 }}>
+            <Text style={{ color: "white", fontSize: 12 }}>{t("no_account")}</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("signup")}
+            >
+              <Text style={[styles.checkboxLabel, { marginLeft: 4 }]}>{t("signup")}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -243,9 +249,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#121212",
     padding: 10,
+    position: "relative",
+  },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.8)", // semi-transparent overlay
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
   },
   image: {
-    width: 350,
+    width: "100%",
     height: 258,
     marginBottom: 10,
     marginLeft: 5,
@@ -325,7 +343,6 @@ const styles = StyleSheet.create({
     color: "#AAAAAA",
     marginBottom: 10,
   },
-
   socialButtons: {
     flexDirection: "row",
     justifyContent: "space-evenly",

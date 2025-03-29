@@ -4,19 +4,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CircularButton from "./component/BackButton";
 import axiosInstance from "./component/axiosInstance";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 export default function ExpertiseLevel({ navigation }) {
   const [selectedLevel, setSelectedLevel] = useState(null);
+  const { t } = useTranslation(); // Initialize translation hook
 
-  // const handleNext = () => {
-  //   if (!selectedLevel) {
-  //     Alert.alert("Select a level", "Please select your expertise level.");
-  //     return;
-  //   }
-  //   navigation.navigate("DailyGoalScreen");
-  // };
+  const handleNext = async () => {
+    if (!selectedLevel) {
+      Alert.alert(t("select_a_level"), t("please_select_expertise_level"));
+      return;
+    }
 
-  const handleNext = async (language) => {
     try {
       const response = await axiosInstance.put("/user/profile", {
         expertiseLevel: selectedLevel,
@@ -26,6 +25,7 @@ export default function ExpertiseLevel({ navigation }) {
       }
     } catch (error) {
       console.log("Error updating profile:", error);
+      Alert.alert(t("error"), t("failed_update_profile") + ": " + error.message);
     }
   };
 
@@ -35,7 +35,7 @@ export default function ExpertiseLevel({ navigation }) {
         {/* Header */}
         <View style={styles.header}>
           <CircularButton navigation={navigation} />
-          <Text style={styles.title}>Expertise Level</Text>
+          <Text style={styles.title}>{t("expertise_level")}</Text>
           <View style={styles.title}></View>
         </View>
 
@@ -47,7 +47,7 @@ export default function ExpertiseLevel({ navigation }) {
           ]}
           onPress={() => setSelectedLevel("Beginner")}
         >
-          <Text style={styles.optionText}>Beginner</Text>
+          <Text style={styles.optionText}>{t("level_beginner")}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -57,7 +57,7 @@ export default function ExpertiseLevel({ navigation }) {
           ]}
           onPress={() => setSelectedLevel("Intermediate")}
         >
-          <Text style={styles.optionText}>Intermediate</Text>
+          <Text style={styles.optionText}>{t("level_intermediate")}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -67,7 +67,7 @@ export default function ExpertiseLevel({ navigation }) {
           ]}
           onPress={() => setSelectedLevel("Advanced")}
         >
-          <Text style={styles.optionText}>Advanced</Text>
+          <Text style={styles.optionText}>{t("level_advanced")}</Text>
         </TouchableOpacity>
 
         {/* Next Button */}
@@ -75,7 +75,7 @@ export default function ExpertiseLevel({ navigation }) {
           style={[styles.nextButton, styles.centerHorizontally]}
           onPress={handleNext}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          <Text style={styles.nextButtonText}>{t("next")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

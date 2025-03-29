@@ -2,8 +2,11 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 export default function PremiumCard() {
+  const { t } = useTranslation(); // Initialize translation hook
+
   return (
     <LinearGradient
       colors={["rgba(142, 68, 173, 1)", "rgba(231, 76, 60, 1)"]} // Gradient colors
@@ -12,18 +15,18 @@ export default function PremiumCard() {
       style={styles.card}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Upgraded Premium</Text>
+        <Text style={styles.title}>{t("premium_card_title")}</Text>
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>12$</Text>
-          <Text style={styles.perMonth}>1 Month</Text>
+          <Text style={styles.price}>{t("premium_price")}</Text>
+          <Text style={styles.perMonth}>{t("premium_duration")}</Text>
         </View>
       </View>
       <View style={styles.features}>
         {[
-          "Live Voice Translation",
-          "Advanced Scenario",
-          "Detailed Reports",
-          "AI Teacher",
+          t("live_voice_translation"),
+          t("advanced_scenario"),
+          t("detailed_reports"),
+          t("ai_teacher"),
         ].map((feature, index) => (
           <View key={index} style={styles.featureItem}>
             <Ionicons name="checkmark-circle" size={20} color="#00FF00" />
@@ -47,7 +50,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 8, // Shadow for Android
-    height : 240
+    height: 240,
   },
   header: {
     flexDirection: "row",

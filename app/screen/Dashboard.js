@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 import {
   Ionicons,
   FontAwesome5,
@@ -21,27 +22,27 @@ import { WebView } from "react-native-webview";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomNavigationBar from "./component/CustomNavigationBar";
 import { LinearGradient } from "expo-linear-gradient";
-import CircularButton from "./component/BackButton";
 import NextButton from "./component/NextButton";
 import PremiumCard from "./component/PremiumCard";
 import FreeCard from "./component/FreeCard";
 import CircularProgress from "./component/CircularProgress";
 import axiosInstance from "./component/axiosInstance";
 import Premium from "../assets/premimum.svg";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from "@react-navigation/native";
 import { useLearningTime } from "./component/LearningTimeContext";
+import { useFocusEffect } from "@react-navigation/native";
+
+const { width } = Dimensions.get("window");
+
 export default function Dashboard({ navigation }) {
-  const { width } = Dimensions.get("window");
+  const { t } = useTranslation(); // Initialize translation hook
   const [loading, setLoading] = useState(false);
   const [plan, setPlan] = useState("");
-  const [goal, setGoal] = useState("");
-  const { learningTime } = useLearningTime(); // Get learning time and update function
+  const [goal, setGoal] = useState(0);
+  const { learningTime } = useLearningTime();
 
-  const CARD_WIDTH = width * 0.8; // Each card takes up 70% of the screen
+  const CARD_WIDTH = width * 0.8;
   const CARD_SPACING = 16;
 
-  // List of components to render
   const cardComponents = [
     { id: "1", component: <PremiumCard /> },
     { id: "2", component: <FreeCard /> },
@@ -52,42 +53,35 @@ export default function Dashboard({ navigation }) {
       {item.component}
     </View>
   );
+
   const scenarios = [
     {
       id: "1",
-      title: "Asking for Directions",
+      title: t("asking_for_directions"),
       image: require("../assets/OBJECTS.png"),
       navigateTo: "asking",
     },
     {
       id: "2",
-      title: "Ordering Coffee",
+      title: t("ordering_coffee"),
       image: require("../assets/Group.png"),
       navigateTo: "OrderingCofee",
     },
     {
       id: "3",
-      title: "Shoping",
+      title: t("shopping"),
       image: require("../assets/shopping.png"),
       navigateTo: "Shooping",
     },
   ];
 
-  const [checkoutUrl, setCheckoutUrl] = useState(null); // Store the checkout URL
+  const [checkoutUrl, setCheckoutUrl] = useState(null);
 
   const createCheckoutSession = async () => {
-    console.log("hellow");
-
     try {
       setLoading(true);
-      console.log("ffff");
-      const response = await axiosInstance.post(
-        "/subscription/stripe-session", // Your backend endpoint
-        {} // Replace with the actual price ID
-      );
-      console.log(response.data);
-
-      setCheckoutUrl(response.data.url); // Save the checkout URL
+      const response = await axiosInstance.post("/subscription/stripe-session", {});
+      setCheckoutUrl(response.data.url);
     } catch (error) {
       Alert.alert("Error", "Failed to create checkout session.");
       console.error(error);
@@ -101,10 +95,8 @@ export default function Dashboard({ navigation }) {
     try {
       const response = await axiosInstance.get("/user/profile");
       const { plan, dailyGoal } = response.data.user;
-
       setPlan(plan);
       setGoal(dailyGoal);
-      console.log(response.data);
     } catch (error) {
       console.error("Error fetching subscriptions:", error);
     } finally {
@@ -112,27 +104,24 @@ export default function Dashboard({ navigation }) {
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+    }, [])
+  );
 
   const handleNavigationStateChange = (navState) => {
-    console.log("navState", navState);
-
     if (navState.url.includes("/api/subscription/stripe-success")) {
-      // Removed trailing slash
-      setCheckoutUrl(null); // Close the WebView
+      setCheckoutUrl(null);
       fetchProfile();
-      navigation.navigate("dashboard"); // Fixed spelling
+      navigation.navigate("dashborad");
       Alert.alert("Success", "Subscription successful!");
     } else if (navState.url.includes("/api/subscription/stripe-cancel")) {
-      // Removed trailing slash
-      setCheckoutUrl(null); // Close the WebView
+      setCheckoutUrl(null);
     }
   };
 
   if (checkoutUrl) {
-    // Render the WebView if a checkout URL is available
     return (
       <SafeAreaView style={styles.safeArea}>
         <WebView
@@ -156,7 +145,7 @@ export default function Dashboard({ navigation }) {
           style={styles.learnMoreButton}
           onPress={() => navigation.navigate(item.navigateTo)}
         >
-          <Text style={styles.learnMoreText}>Learn More</Text>
+          <Text style={styles.learnMoreText}>{t("learn_more")}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.downloadButton}>
           <AntDesign name="download" size={20} color={"#AAAAAA"} />
@@ -165,34 +154,38 @@ export default function Dashboard({ navigation }) {
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="white" />
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor: "#121212" }}>
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {/* Greeting Section */}
           {plan === "Free" ? (
             <View style={styles.greetingSection}>
-              <Text style={styles.greetingTitle}>Good Morning</Text>
-              <Text style={styles.greetingSubtitle}>
-                Ready For A New Lesson
-              </Text>
+              <Text style={styles.greetingTitle}>{t("good_morning")}</Text>
+              <Text style={styles.greetingSubtitle}>{t("ready_for_lesson")}</Text>
               <LinearGradient
                 colors={["#8E44AD", "#4A90E2"]}
                 style={styles.premiumCard}
               >
-                <View>
-                  <Text style={styles.premiumTitle}>Premium Plan</Text>
+                <View style={{ width: "50%" }}>
+                  <Text style={styles.premiumTitle}>{t("premium_plan")}</Text>
                   <Text style={styles.premiumSubtitle}>
-                    Unlock features and get AI recommendations
+                    {t("unlock_features")}
                   </Text>
                   <TouchableOpacity
                     style={styles.upgradeButton}
                     onPress={createCheckoutSession}
                   >
-                    <Text style={styles.upgradeButtonText}>Upgrade</Text>
+                    <Text style={styles.upgradeButtonText}>{t("upgrade")}</Text>
                   </TouchableOpacity>
                 </View>
-
                 <Image
                   source={require("../assets/robot.png")}
                   style={styles.premiumImage}
@@ -200,49 +193,34 @@ export default function Dashboard({ navigation }) {
               </LinearGradient>
             </View>
           ) : (
-            <View style={{ paddingLeft: 10 }}>
-              <Premium />
+            <View style={{ paddingLeft: 10, width: "100%" }}>
+              <Premium width={width - 20} height={(width - 20) * 0.6} />
             </View>
           )}
 
-          {/* Statistics Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Statistics</Text>
+            <Text style={styles.sectionTitle}>{t("statistics")}</Text>
             <LinearGradient
               colors={[
-                "rgba(255, 255, 255, 0.1)", // 0% opacity: Fully visible white
-                "rgba(255, 255, 255, 0.2)", // 77% opacity: 22% visible white
-                "rgba(255, 255, 255, 0))", // 100% opacity: Fully transparent white
+                "rgba(255, 255, 255, 0.1)",
+                "rgba(255, 255, 255, 0.2)",
+                "rgba(255, 255, 255, 0)",
               ]}
-              start={{ x: 0, y: 0 }} // Starting point (top-left)
-              end={{ x: 1, y: 0 }} // Ending point (top-right)
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
               style={[styles.gradient, styles.statRow]}
             >
               <Text style={styles.statText}>
-                Learning Time: {learningTime.minutes} minutes
+                {t("learning_time", { minutes: learningTime.minutes || 0 })}
               </Text>
-
               <CircularProgress
-                percentage={Math.round((learningTime.minutes / goal) * 100)}
+                percentage={
+                  goal ? Math.round((learningTime.minutes / goal) * 100) : 0
+                }
               />
-              {/* <Ionicons name="time-outline" size={20} color="#FFFFFF" /> */}
             </LinearGradient>
-            {/* <LinearGradient
-              colors={[
-                "rgba(255, 255, 255, 0.1)", // 0% opacity: Fully visible white
-                "rgba(255, 255, 255, 0.2)", // 77% opacity: 22% visible white
-                "rgba(255, 255, 255, 0))", // 100% opacity: Fully transparent white
-              ]}
-              start={{ x: 0, y: 0 }} // Starting point (top-left)
-              end={{ x: 1, y: 0 }} // Ending point (top-right)
-              style={[styles.gradient, styles.statRow]}
-            >
-              <Text style={styles.statText}>New Words: 25 words</Text>
-              <Ionicons name="bar-chart-outline" size={20} color="#FFFFFF" />
-            </LinearGradient> */}
           </View>
 
-          {/* Options Section */}
           <View style={styles.optionsRow}>
             <TouchableOpacity
               style={styles.optionCard}
@@ -260,7 +238,7 @@ export default function Dashboard({ navigation }) {
                   alignItems: "flex-end",
                 }}
               >
-                <Text style={styles.optionText}>Chat With Language</Text>
+                <Text style={styles.optionText}>{t("chat_with_language")}</Text>
                 <NextButton />
               </View>
             </TouchableOpacity>
@@ -276,20 +254,20 @@ export default function Dashboard({ navigation }) {
                   alignItems: "flex-end",
                 }}
               >
-                <Text style={styles.optionText}>Talk With Language</Text>
+                <Text style={styles.optionText}>{t("talk_with_language")}</Text>
                 <NextButton />
               </View>
             </TouchableOpacity>
           </View>
           <Text style={[styles.sectionTitle, { paddingLeft: 15 }]}>
-            Practical Scenarios
+            {t("practical_scenarios")}
           </Text>
-          {/* Practical Scenarios */}
+
           <FlatList
             data={scenarios}
             renderItem={renderItem2}
             keyExtractor={(item) => item.id}
-            horizontal // Makes the FlatList scroll horizontally
+            horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.scenarioRow}
           />
@@ -308,8 +286,6 @@ export default function Dashboard({ navigation }) {
             </View>
           )}
         </ScrollView>
-
-        {/* Bottom Navigation */}
         <CustomNavigationBar navigation={navigation} />
       </View>
     </SafeAreaView>
@@ -321,7 +297,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#121212",
   },
-
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#121212", // Optional background color
+  },
   scrollContainer: {
     paddingBottom: 100,
   },
@@ -369,6 +350,7 @@ const styles = StyleSheet.create({
     color: "#B7B7B7",
     fontSize: 14,
     marginVertical: 10,
+   
   },
   upgradeButton: {
     backgroundColor: "#1C1C1C",

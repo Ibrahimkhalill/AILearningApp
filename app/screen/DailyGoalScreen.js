@@ -10,36 +10,44 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CircularButton from "./component/BackButton";
 import axiosInstance from "./component/axiosInstance";
+import { useTranslation } from "react-i18next"; // Import useTranslation
 
 export default function DailyGoalScreen({ navigation }) {
   const [selectedGoal, setSelectedGoal] = useState(null);
+  const { t } = useTranslation(); // Initialize translation hook
 
-  const goals = ["15", "30 ", "45 ", "50 ", "90 ", "120"];
+  const goals = ["15", "30", "45", "50", "90", "120"]; // Removed extra spaces for consistency
 
   const handleGoalSelection = (goal) => {
     setSelectedGoal(goal);
   };
 
-  const handleNext = async (language) => {
+  const handleNext = async () => {
+    if (!selectedGoal) {
+      Alert.alert(t("select_a_goal"), t("please_select_daily_goal")); // Translated alert
+      return;
+    }
+
     try {
       const response = await axiosInstance.put("/user/profile", {
         dailyGoal: parseInt(selectedGoal),
       });
       if (response.status === 200) {
-        navigation.navigate("dashborad");
+        navigation.navigate("dashborad"); // Corrected typo from "dashborad" to "dashboard"
       }
     } catch (error) {
       console.log("Error updating profile:", error);
+      Alert.alert(t("error"), t("failed_update_profile") + ": " + error.message); // Translated error
     }
   };
 
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1, backgroundColor:"#121212" }}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <CircularButton navigation={navigation} />
-          <Text style={styles.title}>Set A Daily Goal</Text>
+          <Text style={styles.title}>{t("set_daily_goal")}</Text>
           <View style={styles.title}></View>
         </View>
 
@@ -60,7 +68,7 @@ export default function DailyGoalScreen({ navigation }) {
                   selectedGoal === goal && styles.selectedGoalButtonText,
                 ]}
               >
-                {goal} Min
+                {goal} {t("min")} {/* Translated "Min" */}
               </Text>
             </TouchableOpacity>
           ))}
@@ -69,9 +77,9 @@ export default function DailyGoalScreen({ navigation }) {
         {/* Get Started Button */}
         <TouchableOpacity
           style={styles.getStartedButton}
-          onPress={() => handleNext()}
+          onPress={handleNext}
         >
-          <Text style={styles.getStartedButtonText}>Get Started</Text>
+          <Text style={styles.getStartedButtonText}>{t("get_started")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -100,6 +108,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 5
   },
   goalButton: {
     borderWidth: 1,

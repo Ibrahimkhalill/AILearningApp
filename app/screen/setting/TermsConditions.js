@@ -15,7 +15,7 @@ import CustomNavigationBar from "../component/CustomNavigationBar";
 
 const TermsConditions = ({ navigation }) => {
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1 , backgroundColor:"#121212" }}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>

@@ -17,19 +17,21 @@ import {
 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import axiosInstance from "../component/axiosInstance";
+import { useTranslation } from "react-i18next"; // Import useTranslation
+
 const ResetPassword = ({ route, navigation }) => {
   const { email } = route.params || {};
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [isPasswordConfirmVisible, setIsPasswordConfirmVisible] =
-    useState(false);
+  const [isPasswordConfirmVisible, setIsPasswordConfirmVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [errors, setErrors] = useState({
     newPassword: "",
     confirmPassword: "",
   });
+  const { t } = useTranslation(); // Initialize translation hook
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
@@ -47,13 +49,12 @@ const ResetPassword = ({ route, navigation }) => {
     if (text === "") {
       setErrors((prev) => ({
         ...prev,
-        newPassword: "Password cannot be empty",
+        newPassword: t("password_empty"),
       }));
     } else if (!validatePassword(text)) {
       setErrors((prev) => ({
         ...prev,
-        newPassword:
-          "Password must be at least 8 characters, include letters, digits, and special characters",
+        newPassword: t("password_requirements"),
       }));
     } else {
       setErrors((prev) => ({ ...prev, newPassword: "" }));
@@ -66,33 +67,32 @@ const ResetPassword = ({ route, navigation }) => {
     if (text === "") {
       setErrors((prev) => ({
         ...prev,
-        confirmPassword: "Confirm Password cannot be empty",
+        confirmPassword: t("confirm_password_empty"),
       }));
     } else if (text !== newPassword) {
       setErrors((prev) => ({
         ...prev,
-        confirmPassword: "Passwords do not match",
+        confirmPassword: t("passwords_do_not_match"),
       }));
     } else {
       setErrors((prev) => ({ ...prev, confirmPassword: "" }));
     }
   };
+
   const handleResetPassword = async () => {
-    // Validate if fields are empty
     if (!newPassword) {
       setErrors((prev) => ({
         ...prev,
-        newPassword: "Password cannot be empty",
+        newPassword: t("password_empty"),
       }));
     }
     if (!confirmPassword) {
       setErrors((prev) => ({
         ...prev,
-        confirmPassword: "Confirm Password cannot be empty",
+        confirmPassword: t("confirm_password_empty"),
       }));
     }
 
-    // Prevent submission if any error exists
     if (
       errors.newPassword ||
       errors.confirmPassword ||
@@ -108,48 +108,40 @@ const ResetPassword = ({ route, navigation }) => {
         email: email,
         newPassword: newPassword,
       });
-      console.log("====================================");
-      console.log(response);
-      console.log("====================================");
-      // Simulate successful password reset
       if (response.status === 200) {
         navigation.navigate("PasswordChanged");
       }
     } catch (error) {
-      alert("An error occurred. Please try again.");
+      alert(t("reset_password_error"));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flexGrow: 1 , backgroundColor:"#121212" }}>
       <View style={styles.container}>
         <View style={styles.backButton}>
-          {/* Add back button logic */}
           <CircularButton navigation={navigation} />
         </View>
 
-        {/* Replace with the globe image from your assets */}
         <View style={styles.iconWrapper}>
           <Image
-            source={require("../../assets/main_logo.png")} // Replace with your image
+            source={require("../../assets/main_logo.png")}
             style={styles.icon}
           />
         </View>
 
-        <Text style={styles.title}>Create new password</Text>
-        <Text style={styles.subtitle}>
-          Your new password must be unique from those previously used.
-        </Text>
+        <Text style={styles.title}>{t("create_new_password")}</Text>
+        <Text style={styles.subtitle}>{t("new_password_unique")}</Text>
 
         <View>
-          <Text className="text-[#A4A4A4] mb-2 mt-2">Password</Text>
+          <Text className="text-[#A4A4A4] mb-2 mt-2">{t("password")}</Text>
           <View style={styles.inputWrapper}>
-            <Ionicons name="lock-closed-outline" size={20} color="#888" />
+            <Ionicons name="lock-closed-outline" style={{marginBotto: 5}} size={20} color="#888" />
             <TextInput
               style={styles.input}
-              placeholder="*************"
+              placeholder={t("password_placeholder")}
               onChangeText={handlePasswordChange}
               value={newPassword}
               secureTextEntry={!isPasswordVisible}
@@ -171,12 +163,13 @@ const ResetPassword = ({ route, navigation }) => {
               {errors.newPassword}
             </Text>
           ) : null}
-          <Text className="text-[#A4A4A4] mb-2 mt-2">Confirm Password</Text>
+
+          <Text className="text-[#A4A4A4] mb-2 mt-2">{t("confirm_password")}</Text>
           <View style={styles.inputWrapper}>
-            <Ionicons name="lock-closed-outline" size={20} color="#888" />
+            <Ionicons name="lock-closed-outline" style={{marginBotto: 5}} size={20} color="#888" />
             <TextInput
               style={styles.input}
-              placeholder="*************"
+              placeholder={t("password_placeholder")}
               onChangeText={handleConfirmPasswordChange}
               value={confirmPassword}
               secureTextEntry={!isPasswordConfirmVisible}
@@ -214,7 +207,7 @@ const ResetPassword = ({ route, navigation }) => {
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <Text style={styles.sendButtonText} className="uppercase">
-                Reset password
+                {t("reset_password")}
               </Text>
             )}
           </LinearGradient>
@@ -227,7 +220,7 @@ const ResetPassword = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: "#121212",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 50,
@@ -236,7 +229,6 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "flex-start",
   },
-
   backButtonText: {
     color: "#FFF",
     fontSize: 20,
@@ -278,11 +270,9 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 55,
   },
-
   input: {
     flex: 1,
     color: "#FFFFFF",
-
     fontSize: 14,
   },
   gradientButton: {
